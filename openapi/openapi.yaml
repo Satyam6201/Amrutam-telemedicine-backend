@@ -1,0 +1,727 @@
+openapi: 3.0.3
+info:
+  title: Amrutam Telemedicine Backend API
+  version: 1.0.0
+  description: >
+    Production-grade backend for Amrutam's Telemedicine System focusing on scalability (100k daily consultations),
+    reliability, security (AES-256-GCM PHI encryption, TOTP MFA, RBAC, tamper-evident audit logs), and observability.
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Local Development Server
+  - url: https://api.amrutam.co.in/api/v1
+    description: Production Cluster Gateway
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your Bearer JWT token obtained from `/auth/login` or `/auth/register`.
+    IdempotencyKey:
+      type: apiKey
+      in: header
+      name: Idempotency-Key
+      description: Unique client-generated UUID to guarantee exactly-once processing for write operations.
+
+  schemas:
+    StandardSuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation completed successfully
+        data:
+          type: object
+
+    StandardErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: CONFLICT
+            message:
+              type: string
+              example: Resource conflict or slot already booked
+            details:
+              type: object
+              nullable: true
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [PATIENT, DOCTOR, ADMIN]
+        phone:
+          type: string
+        isMfaEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        registrationNumber:
+          type: string
+        experienceYears:
+          type: integer
+        qualification:
+          type: string
+        consultationFee:
+          type: number
+        rating:
+          type: number
+        totalRatings:
+          type: integer
+        bio:
+          type: string
+        languages:
+          type: array
+          items:
+            type: string
+        specialties:
+          type: array
+          items:
+            type: object
+
+    AvailabilitySlot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        slotDate:
+          type: string
+          format: date
+        startTime:
+          type: string
+          example: "09:00:00"
+        endTime:
+          type: string
+          example: "09:30:00"
+        status:
+          type: string
+          enum: [AVAILABLE, HELD, BOOKED, BLOCKED]
+        heldUntil:
+          type: string
+          format: date-time
+          nullable: true
+
+    Consultation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        slotId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [REQUESTED, CONFIRMED, SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW]
+        symptoms:
+          type: string
+          description: Decrypted patient symptoms (PHI protected)
+        videoRoomUrl:
+          type: string
+          format: uri
+        cancellationReason:
+          type: string
+          nullable: true
+
+    Prescription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        consultationId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        diagnosis:
+          type: string
+          description: Decrypted Ayurvedic diagnosis
+        medications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              dosage:
+                type: string
+              frequency:
+                type: string
+              durationDays:
+                type: integer
+              instructions:
+                type: string
+        advice:
+          type: string
+        followUpDate:
+          type: string
+          format: date
+        digitalSignature:
+          type: string
+
+paths:
+  /auth/register:
+    post:
+      summary: Register new patient or doctor
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, firstName, lastName]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [PATIENT, DOCTOR]
+                  default: PATIENT
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        201:
+          description: User registered successfully
+        409:
+          description: Email already in use
+
+  /auth/login:
+    post:
+      summary: Authenticate user & issue JWT tokens
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                mfaCode:
+                  type: string
+                  description: Required if user has enabled TOTP MFA
+      responses:
+        200:
+          description: Login successful or MFA code challenge issued
+        401:
+          description: Invalid credentials
+
+  /auth/me:
+    get:
+      summary: Get current authenticated user profile
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: User profile details
+
+  /auth/mfa/setup:
+    post:
+      summary: Setup TOTP Multi-Factor Authentication
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Returns TOTP secret and QR code URI
+
+  /auth/mfa/verify:
+    post:
+      summary: Verify and enable MFA
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+                  example: "123456"
+      responses:
+        200:
+          description: MFA verified and activated
+
+  /doctors:
+    get:
+      summary: Search and filter doctors (cached in Redis)
+      tags: [Doctors]
+      parameters:
+        - in: query
+          name: specialty
+          schema:
+            type: string
+          description: Specialty slug (e.g., panchakarma, kayachikitsa)
+        - in: query
+          name: query
+          schema:
+            type: string
+          description: Free-text search by doctor name or qualification
+        - in: query
+          name: minFee
+          schema:
+            type: number
+        - in: query
+          name: maxFee
+          schema:
+            type: number
+        - in: query
+          name: minRating
+          schema:
+            type: number
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Paginated doctor search results
+
+  /doctors/{id}:
+    get:
+      summary: Get doctor profile details by ID
+      tags: [Doctors]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Doctor details
+
+  /doctors/{doctorId}/slots:
+    get:
+      summary: Get availability slots for a doctor
+      tags: [Slots]
+      parameters:
+        - in: path
+          name: doctorId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+            example: "2026-10-26"
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [AVAILABLE, HELD, BOOKED]
+      responses:
+        200:
+          description: List of availability slots
+
+  /slots/hold:
+    post:
+      summary: Hold a slot for 15 minutes (concurrency-safe with distributed locking)
+      tags: [Slots]
+      security:
+        - BearerAuth: []
+        - IdempotencyKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slotId]
+              properties:
+                slotId:
+                  type: string
+                  format: uuid
+      responses:
+        200:
+          description: Slot held for 15 minutes
+        409:
+          description: Slot already held or booked by another patient
+
+  /slots/release:
+    post:
+      summary: Release held slot back to AVAILABLE
+      tags: [Slots]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slotId]
+              properties:
+                slotId:
+                  type: string
+                  format: uuid
+      responses:
+        200:
+          description: Slot released
+
+  /consultations:
+    get:
+      summary: List consultations for authenticated user (Patient, Doctor, Admin)
+      tags: [Consultations]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [REQUESTED, CONFIRMED, SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Paginated consultations
+    post:
+      summary: Book a consultation with slot confirmation & PHI encryption
+      tags: [Consultations]
+      security:
+        - BearerAuth: []
+        - IdempotencyKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slotId, doctorId, symptoms, scheduledAt]
+              properties:
+                slotId:
+                  type: string
+                  format: uuid
+                doctorId:
+                  type: string
+                  format: uuid
+                symptoms:
+                  type: string
+                  description: Medical symptoms (encrypted at rest using AES-256-GCM)
+                scheduledAt:
+                  type: string
+                  format: date-time
+      responses:
+        201:
+          description: Consultation booked and slot confirmed
+        409:
+          description: Slot conflict
+
+  /consultations/{id}:
+    get:
+      summary: Get consultation details with decrypted PHI
+      tags: [Consultations]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Consultation details
+
+  /consultations/{id}/status:
+    patch:
+      summary: Transition consultation status (Doctor or Admin)
+      tags: [Consultations]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [IN_PROGRESS, COMPLETED, CANCELLED]
+                clinicalNotes:
+                  type: string
+                cancellationReason:
+                  type: string
+      responses:
+        200:
+          description: Consultation status updated
+
+  /prescriptions:
+    post:
+      summary: Issue digital prescription with HMAC-SHA256 signature and encrypted diagnosis
+      tags: [Prescriptions]
+      security:
+        - BearerAuth: []
+        - IdempotencyKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [consultationId, diagnosis, medications]
+              properties:
+                consultationId:
+                  type: string
+                  format: uuid
+                diagnosis:
+                  type: string
+                medications:
+                  type: array
+                  items:
+                    type: object
+                    required: [name, dosage, frequency, durationDays]
+                    properties:
+                      name:
+                        type: string
+                      dosage:
+                        type: string
+                      frequency:
+                        type: string
+                      durationDays:
+                        type: integer
+                      instructions:
+                        type: string
+                advice:
+                  type: string
+                followUpDate:
+                  type: string
+                  format: date
+      responses:
+        201:
+          description: Prescription issued successfully
+
+  /prescriptions/consultation/{consultationId}:
+    get:
+      summary: Get prescription for a consultation
+      tags: [Prescriptions]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: consultationId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Prescription details
+
+  /payments:
+    post:
+      summary: Initialize payment session for consultation
+      tags: [Payments]
+      security:
+        - BearerAuth: []
+        - IdempotencyKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [consultationId, amount]
+              properties:
+                consultationId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                paymentMethod:
+                  type: string
+                  enum: [RAZORPAY_UPI, CREDIT_CARD, DEBIT_CARD, NETBANKING]
+                  default: RAZORPAY_UPI
+      responses:
+        201:
+          description: Payment session initialized
+
+  /payments/webhook:
+    post:
+      summary: Payment gateway webhook handler with saga compensation
+      tags: [Payments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [transactionId, paymentId, status, signature]
+              properties:
+                transactionId:
+                  type: string
+                paymentId:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  enum: [CAPTURED, FAILED]
+                signature:
+                  type: string
+      responses:
+        200:
+          description: Webhook processed
+
+  /admin/audit-logs:
+    get:
+      summary: List immutable audit logs (Admin only)
+      tags: [Compliance & Audit]
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: resourceType
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+      responses:
+        200:
+          description: Paginated audit logs
+
+  /admin/audit-logs/verify-integrity:
+    get:
+      summary: Verify cryptographic SHA-256 hash chain integrity of all audit records
+      tags: [Compliance & Audit]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Cryptographic integrity verification report
+
+  /admin/analytics/overview:
+    get:
+      summary: System overview analytics (consultations, revenue, users)
+      tags: [Admin Analytics]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Aggregated platform metrics
+
+  /admin/analytics/doctor-utilization:
+    get:
+      summary: Doctor slot utilization and revenue performance
+      tags: [Admin Analytics]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Doctor utilization breakdown
+
+  /admin/analytics/retention-and-peak:
+    get:
+      summary: Peak consultation booking hours and patient retention percentage
+      tags: [Admin Analytics]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Peak hours and retention rates
