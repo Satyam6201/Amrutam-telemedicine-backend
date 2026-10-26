@@ -88,13 +88,13 @@ jobs:
         run: npm run db:seed
 
       - name: Run Unit Tests
-        run: node --test tests/unit/**/*.test.js
+        run: node --test tests/unit/
 
       - name: Run Concurrency Race Condition Tests
-        run: node --test tests/concurrency/**/*.test.js
+        run: node --test tests/concurrency/
 
       - name: Run API Integration Tests
-        run: node --test tests/integration/**/*.test.js
+        run: node --test tests/integration/
 
   docker-build:
     name: Container Build & Health Validation
