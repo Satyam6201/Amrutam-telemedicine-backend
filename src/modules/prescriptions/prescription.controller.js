@@ -34,3 +34,4 @@ export class PrescriptionController {
 }
 
 export default PrescriptionController;
+

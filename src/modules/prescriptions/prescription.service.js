@@ -7,30 +7,25 @@ import { NotFoundError, ForbiddenError } from '../../utils/errors.js';
 import logger from '../../utils/logger.js';
 
 export class PrescriptionService {
-  /**
-   * Issue a digitally signed, encrypted digital prescription
-   */
+
   static async issuePrescription(
     { consultationId, diagnosis, medications, advice, followUpDate },
     requestingDoctorUser,
     clientIp,
     userAgent
   ) {
-    // 1. Fetch consultation
+
     const consultation = await ConsultationRepository.findById(consultationId);
     if (!consultation) {
       throw new NotFoundError(`Consultation with ID ${consultationId} not found.`);
     }
 
-    // 2. Verify requesting user is the assigned doctor
     if (consultation.doctor_user_id !== requestingDoctorUser.id && requestingDoctorUser.role !== 'ADMIN') {
       throw new ForbiddenError('Only the assigned doctor can issue prescriptions for this consultation.');
     }
 
-    // 3. Encrypt diagnosis (PHI)
     const encryptedDiagnosis = encryptPHI(diagnosis);
 
-    // 4. Generate digital cryptographic signature
     const issuedAt = new Date().toISOString();
     const digitalSignature = generatePrescriptionSignature({
       doctorId: consultation.doctor_id,
@@ -40,7 +35,6 @@ export class PrescriptionService {
       medications,
     });
 
-    // 5. Store prescription
     const prescription = await PrescriptionRepository.createPrescription({
       consultationId,
       doctorId: consultation.doctor_id,
@@ -52,7 +46,6 @@ export class PrescriptionService {
       digitalSignature,
     });
 
-    // 6. Automatically complete consultation if not already completed
     if (consultation.status !== 'COMPLETED') {
       await ConsultationRepository.updateStatus({
         id: consultationId,
@@ -61,7 +54,6 @@ export class PrescriptionService {
       });
     }
 
-    // 7. Enqueue background notification to patient
     try {
       await notificationQueue.add(
         'prescription-ready',
@@ -76,7 +68,6 @@ export class PrescriptionService {
       logger.warn({ err: err.message }, 'Failed to enqueue prescription notification');
     }
 
-    // 8. Record audit log
     await logAuditEvent({
       userId: requestingDoctorUser.id,
       action: 'PRESCRIPTION_ISSUED',
@@ -94,20 +85,16 @@ export class PrescriptionService {
 
     return {
       ...prescription,
-      diagnosis, // Unencrypted for the immediate issuer response
+      diagnosis,
     };
   }
 
-  /**
-   * Get prescription by consultation ID with decrypted PHI
-   */
   static async getByConsultationId(consultationId, requestingUser) {
     const prescription = await PrescriptionRepository.findByConsultationId(consultationId);
     if (!prescription) {
       throw new NotFoundError(`No prescription found for consultation ID ${consultationId}.`);
     }
 
-    // Access control: only patient, doctor, or admin
     const isPatient = prescription.patient_id === requestingUser.id;
     const isDoctor = prescription.doctor_user_id === requestingUser.id;
     const isAdmin = requestingUser.role === 'ADMIN';
@@ -132,3 +119,4 @@ export class PrescriptionService {
 }
 
 export default PrescriptionService;
+

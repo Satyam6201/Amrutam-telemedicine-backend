@@ -2,11 +2,6 @@ import { pool } from '../../config/database.js';
 import { computeAuditHash } from '../utils/crypto.js';
 import logger from '../utils/logger.js';
 
-/**
- * Persist an immutable audit log entry linked to the previous log's SHA-256 hash
- * Employs a transaction-level PostgreSQL advisory lock to ensure strictly linear,
- * concurrency-safe cryptographic hash chaining under high parallel load.
- */
 export async function logAuditEvent({
   userId,
   action,
@@ -20,10 +15,9 @@ export async function logAuditEvent({
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // 1. Transaction-scoped advisory lock serializes cryptographic chain construction
+
     await client.query("SELECT pg_advisory_xact_lock(hashtext('amrutam_audit_log_chain'))");
 
-    // 2. Fetch latest audit log hash to maintain cryptographic chain
     const latestRes = await client.query(
       `SELECT hash_signature FROM audit_logs
        ORDER BY id DESC
@@ -36,7 +30,6 @@ export async function logAuditEvent({
 
     const timestamp = new Date().toISOString();
 
-    // 3. Compute tamper-evident hash signature
     const hashSignature = computeAuditHash({
       prevHash,
       userId,
@@ -48,7 +41,6 @@ export async function logAuditEvent({
       newVal: newState,
     });
 
-    // 4. Insert into audit_logs table
     await client.query(
       `INSERT INTO audit_logs (
         user_id, action, resource_type, resource_id, ip_address, user_agent,
@@ -80,9 +72,6 @@ export async function logAuditEvent({
   }
 }
 
-/**
- * Express middleware helper to log action automatically
- */
 export function auditTrail(action, resourceType, getResourceId = (req) => req.params.id) {
   return (req, res, next) => {
     const originalJson = res.json.bind(res);
@@ -107,3 +96,4 @@ export function auditTrail(action, resourceType, getResourceId = (req) => req.pa
 }
 
 export default { logAuditEvent, auditTrail };
+

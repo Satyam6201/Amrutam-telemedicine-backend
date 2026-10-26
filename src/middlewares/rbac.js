@@ -1,9 +1,5 @@
 import { ForbiddenError, UnauthorizedError } from '../utils/errors.js';
 
-/**
- * Role-Based Access Control middleware
- * @param {...string} allowedRoles - 'PATIENT', 'DOCTOR', 'ADMIN'
- */
 export function authorizeRoles(...allowedRoles) {
   return (req, res, next) => {
     if (!req.user) {
@@ -23,3 +19,4 @@ export function authorizeRoles(...allowedRoles) {
 }
 
 export default authorizeRoles;
+

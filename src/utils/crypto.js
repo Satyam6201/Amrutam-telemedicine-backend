@@ -5,11 +5,6 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const KEY = Buffer.from(config.encryption.key, 'hex');
 
-/**
- * Encrypt sensitive Patient Health Information (PHI) using AES-256-GCM
- * @param {string|object} plaintext - Data to encrypt
- * @returns {string} Encrypted string: "v1:<iv_hex>:<tag_hex>:<ciphertext_hex>"
- */
 export function encryptPHI(plaintext) {
   if (!plaintext) return null;
   const text = typeof plaintext === 'object' ? JSON.stringify(plaintext) : String(plaintext);
@@ -25,11 +20,6 @@ export function encryptPHI(plaintext) {
   return `${config.encryption.keyVersion}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
 
-/**
- * Decrypt sensitive Patient Health Information (PHI)
- * @param {string} encryptedPayload - "v1:<iv_hex>:<tag_hex>:<ciphertext_hex>"
- * @returns {string} Decrypted plaintext
- */
 export function decryptPHI(encryptedPayload) {
   if (!encryptedPayload) return null;
 
@@ -55,9 +45,6 @@ export function decryptPHI(encryptedPayload) {
   }
 }
 
-/**
- * Serialize JavaScript objects to canonical JSON (sorted keys) for deterministic cryptographic hashing
- */
 export function canonicalJson(obj) {
   if (obj === null || obj === undefined || typeof obj !== 'object') {
     return JSON.stringify(obj ?? null);
@@ -69,9 +56,6 @@ export function canonicalJson(obj) {
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalJson(obj[k])).join(',') + '}';
 }
 
-/**
- * Compute cryptographic hash for audit trail linking (Blockchain-style SHA-256 hash chaining)
- */
 export function computeAuditHash({ prevHash, userId, action, resourceType, resourceId, timestamp, oldVal, newVal }) {
   const content = [
     prevHash || '0000000000000000000000000000000000000000000000000000000000000000',
@@ -87,17 +71,11 @@ export function computeAuditHash({ prevHash, userId, action, resourceType, resou
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
-/**
- * Generate cryptographic digital signature for prescription
- */
 export function generatePrescriptionSignature({ doctorId, consultationId, patientId, issuedAt, medications }) {
   const payload = `${doctorId}:${consultationId}:${patientId}:${issuedAt}:${JSON.stringify(medications)}`;
   return crypto.createHmac('sha256', config.jwt.secret).update(payload).digest('hex');
 }
 
-/**
- * Compute SHA-256 hash of request body for idempotency validation
- */
 export function hashPayload(payload) {
   return crypto.createHash('sha256').update(JSON.stringify(payload || {})).digest('hex');
 }
@@ -109,3 +87,4 @@ export default {
   generatePrescriptionSignature,
   hashPayload,
 };
+

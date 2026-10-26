@@ -12,7 +12,7 @@ export const registerSchema = z.object({
   phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid international phone format').optional(),
   firstName: z.string().min(1, 'First name is required').trim(),
   lastName: z.string().min(1, 'Last name is required').trim(),
-  // Optional doctor registration fields
+
   registrationNumber: z.string().optional(),
   qualification: z.string().optional(),
   consultationFee: z.number().positive().optional(),
@@ -38,3 +38,4 @@ export default {
   mfaVerifySchema,
   refreshTokenSchema,
 };
+

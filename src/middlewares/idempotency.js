@@ -7,7 +7,7 @@ import logger from '../utils/logger.js';
 
 export function idempotency({ required = false } = {}) {
   return async (req, res, next) => {
-    // Only apply to write requests
+
     if (!['POST', 'PUT', 'PATCH'].includes(req.method)) {
       return next();
     }
@@ -30,7 +30,7 @@ export function idempotency({ required = false } = {}) {
     const ttlSeconds = config.idempotency.ttlSeconds;
 
     try {
-      // 1. Check Redis first for low latency (<2ms)
+
       const cached = await redis.get(redisKey);
       if (cached) {
         const parsed = JSON.parse(cached);
@@ -48,7 +48,6 @@ export function idempotency({ required = false } = {}) {
         return res.status(parsed.statusCode).json(parsed.body);
       }
 
-      // 2. Check Database record if Redis missed
       const dbCheck = await query(
         'SELECT idempotency_key, request_hash, status, response_code, response_body FROM idempotency_records WHERE idempotency_key = $1',
         [idempotencyKey]
@@ -66,7 +65,6 @@ export function idempotency({ required = false } = {}) {
           );
         }
 
-        // Populate Redis cache for future reads
         await redis.set(
           redisKey,
           JSON.stringify({
@@ -83,7 +81,6 @@ export function idempotency({ required = false } = {}) {
         return res.status(record.response_code).json(record.response_body);
       }
 
-      // 3. Mark as PROCESSING in Redis & DB
       const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
       await redis.set(
@@ -93,7 +90,7 @@ export function idempotency({ required = false } = {}) {
           requestHash,
         }),
         'EX',
-        60 // Processing lock expires in 60s if crashed
+        60
       );
 
       await query(
@@ -103,13 +100,11 @@ export function idempotency({ required = false } = {}) {
         [idempotencyKey, requestHash, expiresAt]
       );
 
-      // 4. Intercept response to record final payload
       const originalJson = res.json.bind(res);
       res.json = (body) => {
         const statusCode = res.statusCode;
         const status = statusCode >= 200 && statusCode < 400 ? 'COMPLETED' : 'FAILED';
 
-        // Background update in Redis and DB
         Promise.all([
           redis.set(
             redisKey,
@@ -144,3 +139,4 @@ export function idempotency({ required = false } = {}) {
 }
 
 export default idempotency;
+

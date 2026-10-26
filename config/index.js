@@ -48,7 +48,7 @@ const config = {
   },
 
   locking: {
-    slotLockTtlSeconds: parseInt(process.env.SLOT_LOCK_TTL_SECONDS || '900', 10), // 15 mins
+    slotLockTtlSeconds: parseInt(process.env.SLOT_LOCK_TTL_SECONDS || '900', 10),
   },
 
   rateLimit: {
@@ -63,3 +63,4 @@ const config = {
 };
 
 export default config;
+

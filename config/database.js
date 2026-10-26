@@ -24,9 +24,6 @@ pool.on('error', (err) => {
   logger.error({ err }, 'Unexpected PostgreSQL pool error on idle client');
 });
 
-/**
- * Execute a parameterized query with latency tracking
- */
 export async function query(text, params) {
   const start = Date.now();
   try {
@@ -42,9 +39,6 @@ export async function query(text, params) {
   }
 }
 
-/**
- * Transaction helper executing callback within BEGIN ... COMMIT / ROLLBACK
- */
 export async function withTransaction(callback) {
   const client = await pool.connect();
   try {
@@ -61,3 +55,4 @@ export async function withTransaction(callback) {
 }
 
 export default { pool, query, withTransaction };
+

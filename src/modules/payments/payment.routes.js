@@ -7,7 +7,6 @@ import { createPaymentSchema, webhookSchema } from './payment.validator.js';
 
 const router = Router();
 
-// Initiate payment (Patient only, protected by idempotency)
 router.post(
   '/',
   authenticate,
@@ -16,7 +15,6 @@ router.post(
   PaymentController.createPayment
 );
 
-// Payment Gateway Webhook (Razorpay/Stripe mock webhook)
 router.post(
   '/webhook',
   validate({ body: webhookSchema }),
@@ -24,3 +22,4 @@ router.post(
 );
 
 export default router;
+

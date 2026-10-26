@@ -1,9 +1,5 @@
 import { UnprocessableEntityError } from '../utils/errors.js';
 
-/**
- * Validate incoming request body, query, and params against a Zod schema
- * @param {object} schemas - { body, query, params }
- */
 export function validate(schemas) {
   return (req, res, next) => {
     const validationErrors = {};
@@ -53,3 +49,4 @@ export function validate(schemas) {
 }
 
 export default validate;
+

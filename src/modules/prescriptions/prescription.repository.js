@@ -78,3 +78,4 @@ export class PrescriptionRepository {
 }
 
 export default PrescriptionRepository;
+

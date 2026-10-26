@@ -8,9 +8,7 @@ import { ConflictError, UnauthorizedError, BadRequestError } from '../../utils/e
 import { logAuditEvent } from '../../middlewares/auditLogger.js';
 
 export class AuthService {
-  /**
-   * Register a new user
-   */
+
   static async register(data, clientIp, userAgent) {
     const existing = await AuthRepository.findUserByEmail(data.email);
     if (existing) {
@@ -25,10 +23,8 @@ export class AuthService {
       passwordHash,
     });
 
-    // Generate authentication tokens
     const tokens = AuthService.generateTokens(user);
 
-    // Audit log registration
     await logAuditEvent({
       userId: user.id,
       action: 'USER_REGISTERED',
@@ -43,9 +39,6 @@ export class AuthService {
     return { user, tokens };
   }
 
-  /**
-   * Authenticate user with password and optional MFA
-   */
   static async login({ email, password, mfaCode }, clientIp, userAgent) {
     const user = await AuthRepository.findUserByEmail(email);
     if (!user) {
@@ -57,7 +50,6 @@ export class AuthService {
       throw new UnauthorizedError('Invalid email or password.');
     }
 
-    // Check if MFA is required
     if (user.is_mfa_enabled) {
       if (!mfaCode) {
         return {
@@ -99,9 +91,6 @@ export class AuthService {
     return { user: userProfile, tokens, mfaRequired: false };
   }
 
-  /**
-   * Generate access and refresh token pair
-   */
   static generateTokens(user) {
     const payload = {
       id: user.id,
@@ -120,9 +109,6 @@ export class AuthService {
     return { accessToken, refreshToken, expiresIn: config.jwt.expiresIn };
   }
 
-  /**
-   * Refresh expired access token using refresh token
-   */
   static async refreshToken(refreshToken) {
     try {
       const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
@@ -139,9 +125,6 @@ export class AuthService {
     }
   }
 
-  /**
-   * Setup MFA - returns TOTP secret and QR code URI
-   */
   static async setupMFA(userId) {
     const user = await AuthRepository.findUserById(userId);
     if (!user) {
@@ -152,15 +135,11 @@ export class AuthService {
     const otpauth = authenticator.keyuri(user.email, config.mfa.issuer, secret);
     const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
 
-    // Save temporary secret until verified
     await AuthRepository.updateMfaSecret(userId, secret);
 
     return { secret, qrCodeDataUrl, otpauth };
   }
 
-  /**
-   * Verify and enable MFA with TOTP token
-   */
   static async verifyAndEnableMFA(userId, token) {
     const user = await AuthRepository.findUserByEmail(
       (await AuthRepository.findUserById(userId)).email
@@ -181,3 +160,4 @@ export class AuthService {
 }
 
 export default AuthService;
+

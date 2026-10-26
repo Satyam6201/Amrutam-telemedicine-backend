@@ -15,7 +15,7 @@ export class AnalyticsService {
     const data = await AnalyticsRepository.getOverviewMetrics();
 
     try {
-      await redis.set(cacheKey, JSON.stringify(data), 'EX', 300); // 5 min TTL
+      await redis.set(cacheKey, JSON.stringify(data), 'EX', 300);
     } catch (err) {}
 
     return data;
@@ -47,7 +47,7 @@ export class AnalyticsService {
     const data = await AnalyticsRepository.getPeakHoursAndRetention();
 
     try {
-      await redis.set(cacheKey, JSON.stringify(data), 'EX', 600); // 10 min TTL
+      await redis.set(cacheKey, JSON.stringify(data), 'EX', 600);
     } catch (err) {}
 
     return data;
@@ -55,3 +55,4 @@ export class AnalyticsService {
 }
 
 export default AnalyticsService;
+

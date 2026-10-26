@@ -8,7 +8,7 @@ export async function seedDatabase() {
   logger.info('Seeding database with production reference data...');
 
   try {
-    // 1. Seed Specialties
+
     const specialties = [
       { name: 'Ayurveda General', slug: 'ayurveda-general', description: 'Holistic Ayurvedic primary care' },
       { name: 'Kayachikitsa', slug: 'kayachikitsa', description: 'Ayurvedic internal medicine & chronic disease management' },
@@ -31,7 +31,6 @@ export async function seedDatabase() {
     }
     logger.info('Specialties seeded');
 
-    // 2. Seed Admin User
     const adminPasswordHash = await bcrypt.hash('Admin@Amrutam2026', 10);
     const adminRes = await query(
       `INSERT INTO users (email, password_hash, role, phone, is_verified)
@@ -50,7 +49,6 @@ export async function seedDatabase() {
     );
     logger.info('Admin user seeded');
 
-    // 3. Seed Patient User
     const patientPasswordHash = await bcrypt.hash('Patient@Amrutam2026', 10);
     const patientRes = await query(
       `INSERT INTO users (email, password_hash, role, phone, is_verified)
@@ -70,7 +68,6 @@ export async function seedDatabase() {
     );
     logger.info('Patient user seeded');
 
-    // 4. Seed Doctors
     const doctorPasswordHash = await bcrypt.hash('Doctor@Amrutam2026', 10);
     const doctorSeedList = [
       {
@@ -164,7 +161,6 @@ export async function seedDatabase() {
       const doctorId = docRes.rows[0].id;
       doctorIds.push(doctorId);
 
-      // Link specialties
       for (const specSlug of doc.specialties) {
         const specId = specialtyMap[specSlug];
         if (specId) {
@@ -179,7 +175,6 @@ export async function seedDatabase() {
     }
     logger.info('Doctors and specialties seeded');
 
-    // 5. Seed Availability Slots for the next 7 days
     const timeSlots = [
       { start: '09:00:00', end: '09:30:00' },
       { start: '09:30:00', end: '10:00:00' },
@@ -212,7 +207,6 @@ export async function seedDatabase() {
     }
     logger.info('Availability slots seeded for upcoming 7 days');
 
-    // 6. Seed a Reference Completed Consultation with Prescription & Payment
     const primaryDoctorId = doctorIds[0];
     const consultScheduledAt = new Date(today);
     consultScheduledAt.setHours(10, 0, 0, 0);
@@ -239,7 +233,6 @@ export async function seedDatabase() {
     );
     const consultationId = consultRes.rows[0].id;
 
-    // Seed Prescription
     const encDiagnosis = encryptPHI('Grahani Roga (Ayurvedic Irritable Bowel / Malabsorption syndrome) with Mandagni');
     const medications = [
       {
@@ -292,7 +285,6 @@ export async function seedDatabase() {
       ]
     );
 
-    // Seed Payment
     await query(
       `INSERT INTO payments (
         consultation_id, patient_id, amount, currency, payment_method,
@@ -312,7 +304,6 @@ export async function seedDatabase() {
       ]
     );
 
-    // 7. Seed Initial Tamper-Evident Audit Log (Reset audit table for clean chain)
     await query('TRUNCATE audit_logs CASCADE');
     const initialAuditTimestamp = new Date().toISOString();
     const auditHash = computeAuditHash({
@@ -369,3 +360,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 }
 
 export default seedDatabase;
+

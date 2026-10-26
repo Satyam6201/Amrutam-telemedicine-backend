@@ -1,9 +1,7 @@
 import { query } from '../../../config/database.js';
 
 export class DoctorRepository {
-  /**
-   * Search and filter doctors with pagination
-   */
+
   static async searchDoctors({
     specialty,
     query: searchKeyword,
@@ -54,7 +52,6 @@ export class DoctorRepository {
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const offset = (page - 1) * limit;
 
-    // Count query
     const countSql = `
       SELECT COUNT(DISTINCT d.id) as total
       FROM doctors d
@@ -66,7 +63,6 @@ export class DoctorRepository {
     const countRes = await query(countSql, params);
     const total = parseInt(countRes.rows[0].total, 10);
 
-    // Data query
     const dataSql = `
       SELECT d.id, d.user_id, d.registration_number, d.experience_years, d.qualification,
              d.consultation_fee, d.rating, d.total_ratings, d.bio, d.languages,
@@ -137,3 +133,4 @@ export class DoctorRepository {
 }
 
 export default DoctorRepository;
+

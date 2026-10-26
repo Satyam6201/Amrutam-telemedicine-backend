@@ -48,3 +48,4 @@ export class PaymentRepository {
 }
 
 export default PaymentRepository;
+

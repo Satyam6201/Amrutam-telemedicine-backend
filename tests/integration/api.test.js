@@ -20,13 +20,12 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
   });
 
   after(async () => {
-    // Clean up connections after tests
+
     await closeQueues();
     await pool.end();
     await redis.quit();
   });
 
-  // 1. HEALTH CHECKS & OBSERVABILITY
   describe('Health & Observability Endpoints', () => {
     it('GET /health/live should return 200 UP', async () => {
       const res = await request(app).get('/health/live');
@@ -49,7 +48,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 2. AUTHENTICATION & RBAC
   describe('Authentication Lifecycle', () => {
     it('POST /api/v1/auth/login should authenticate seeded admin', async () => {
       const res = await request(app)
@@ -117,7 +115,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 3. DOCTOR SEARCH & CATALOG
   describe('Doctor Discovery', () => {
     it('GET /api/v1/doctors should return list of approved doctors', async () => {
       const res = await request(app).get('/api/v1/doctors');
@@ -144,7 +141,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 4. SLOTS & BOOKING WORKFLOW
   describe('Availability Slots & Hold', () => {
     it('GET /api/v1/doctors/:doctorId/slots should return available slots', async () => {
       const res = await request(app).get(`/api/v1/doctors/${doctorId}/slots?status=AVAILABLE`);
@@ -176,7 +172,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 5. CONSULTATION LIFECYCLE & PHI ENCRYPTION
   describe('Consultation Lifecycle & PHI Protection', () => {
     it('POST /api/v1/consultations should book consultation, confirm slot, and encrypt symptoms', async () => {
       const scheduledAt = new Date(Date.now() + 86400000).toISOString();
@@ -223,7 +218,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 6. PRESCRIPTION WITH DIGITAL SIGNATURE
   describe('Prescription Management', () => {
     it('POST /api/v1/prescriptions should issue digitally signed prescription with encrypted diagnosis', async () => {
       const res = await request(app)
@@ -268,7 +262,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 7. PAYMENTS & SAGA WEBHOOK
   describe('Payment Saga', () => {
     let paymentId;
     it('POST /api/v1/payments should initiate payment session', async () => {
@@ -301,7 +294,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 8. COMPLIANCE & CRYPTOGRAPHIC AUDIT VERIFICATION
   describe('Compliance & Audit Integrity', () => {
     it('GET /api/v1/admin/audit-logs should return audit logs for admin', async () => {
       const res = await request(app)
@@ -332,7 +324,6 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 
-  // 9. ADMIN ANALYTICS
   describe('Admin Analytics', () => {
     it('GET /api/v1/admin/analytics/overview should return platform metrics', async () => {
       const res = await request(app)
@@ -354,3 +345,4 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
     });
   });
 });
+

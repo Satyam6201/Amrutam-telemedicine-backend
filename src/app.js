@@ -23,14 +23,12 @@ const __dirname = path.dirname(__filename);
 export function createApp() {
   const app = express();
 
-  // 1. Security HTTP Headers
   app.use(
     helmet({
-      contentSecurityPolicy: false, // Allows Swagger UI inline scripts
+      contentSecurityPolicy: false,
     })
   );
 
-  // 2. CORS configuration
   app.use(
     cors({
       origin: config.corsOrigin === '*' ? true : config.corsOrigin,
@@ -40,7 +38,6 @@ export function createApp() {
     })
   );
 
-  // 3. Request Correlation ID & Tracing
   app.use((req, res, next) => {
     const requestId = req.headers['x-request-id'] || crypto.randomUUID();
     req.id = requestId;
@@ -48,15 +45,12 @@ export function createApp() {
     next();
   });
 
-  // 4. Body Parsers with limits
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-  // 5. Prometheus Observability Metrics
   app.use(metricsMiddleware);
   app.get('/metrics', getMetricsHandler);
 
-  // 6. Health Checks
   app.get('/health/live', (req, res) => {
     res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
   });
@@ -89,7 +83,6 @@ export function createApp() {
     });
   });
 
-  // 7. Interactive OpenAPI / Swagger Documentation
   try {
     const openapiPath = path.resolve(__dirname, '../openapi/openapi.yaml');
     if (fs.existsSync(openapiPath)) {
@@ -102,17 +95,14 @@ export function createApp() {
     logger.warn({ err: err.message }, 'Failed to load OpenAPI YAML schema for Swagger UI');
   }
 
-  // 8. Serve Static Web Portal
   const publicPath = path.resolve(__dirname, '../public');
   app.use(express.static(publicPath));
   app.get('/portal', (req, res) => {
     res.sendFile(path.join(publicPath, 'index.html'));
   });
 
-  // 9. Mount Main API Routes
   app.use(config.apiPrefix, routes);
 
-  // 10. Root route: Serves Web Portal for browsers, JSON metadata for API clients
   app.get('/', (req, res) => {
     if (req.accepts('html')) {
       return res.sendFile(path.join(publicPath, 'index.html'));
@@ -128,15 +118,14 @@ export function createApp() {
     });
   });
 
-  // 10. 404 Handler
   app.use((req, res, next) => {
     next(new NotFoundError(`Route ${req.method} ${req.originalUrl} not found on this server`));
   });
 
-  // 11. Centralized Error Handler
   app.use(errorHandler);
 
   return app;
 }
 
 export default createApp;
+

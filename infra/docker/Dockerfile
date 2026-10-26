@@ -1,8 +1,3 @@
-# ==============================================================================
-# MULTI-STAGE PRODUCTION DOCKERFILE FOR AMRUTAM TELEMEDICINE BACKEND
-# ==============================================================================
-
-# Stage 1: Build & Dependencies
 FROM node:20-slim AS builder
 WORKDIR /app
 
@@ -13,17 +8,14 @@ RUN npm ci --only=production
 
 COPY . .
 
-# Stage 2: Minimal Production Runtime
 FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4000
 
-# Install curl for container health check
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-# Run as non-privileged user for container security
 USER node
 
 COPY --chown=node:node --from=builder /app /app

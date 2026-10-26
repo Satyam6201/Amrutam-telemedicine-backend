@@ -6,11 +6,6 @@ export class AuditService {
     return AuditRepository.listLogs(filters);
   }
 
-  /**
-   * Verify cryptographic integrity of the audit log chain
-   * Iterates through sequentially ordered records, recomputes each SHA-256 hash signature,
-   * and verifies that prev_hash matches the previous record's hash_signature.
-   */
   static async verifyChainIntegrity() {
     const logs = await AuditRepository.getLogsForIntegrityCheck(500);
 
@@ -28,7 +23,6 @@ export class AuditService {
     for (let i = 0; i < logs.length; i++) {
       const record = logs[i];
 
-      // 1. Verify prev_hash matches prior entry's hash
       if (record.prev_hash !== previousHash) {
         violations.push({
           logId: record.id,
@@ -38,7 +32,6 @@ export class AuditService {
         });
       }
 
-      // 2. Recompute record's hash signature
       const expectedHash = computeAuditHash({
         prevHash: record.prev_hash,
         userId: record.user_id,
@@ -72,3 +65,4 @@ export class AuditService {
 }
 
 export default AuditService;
+

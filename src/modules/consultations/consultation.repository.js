@@ -2,9 +2,7 @@ import { query, withTransaction } from '../../../config/database.js';
 import SlotRepository from '../slots/slot.repository.js';
 
 export class ConsultationRepository {
-  /**
-   * Insert new consultation and atomically confirm slot within a transaction
-   */
+
   static async createConsultation({
     doctorId,
     patientId,
@@ -14,13 +12,12 @@ export class ConsultationRepository {
     videoRoomUrl,
   }) {
     return withTransaction(async (client) => {
-      // 1. Confirm slot atomically
+
       const updatedSlot = await SlotRepository.confirmSlot(slotId, patientId, client);
       if (!updatedSlot) {
         throw new Error('SLOT_UNAVAILABLE');
       }
 
-      // 2. Insert into partitioned consultations table
       const consultRes = await client.query(
         `INSERT INTO consultations (
           doctor_id, patient_id, slot_id, scheduled_at, status,
@@ -74,7 +71,7 @@ export class ConsultationRepository {
     } else if (role === 'DOCTOR') {
       conditions.push(`d.user_id = $${paramIndex++}`);
       params.push(userId);
-    } // ADMIN has no filter, sees all
+    }
 
     if (status) {
       conditions.push(`c.status = $${paramIndex++}`);
@@ -134,7 +131,6 @@ export class ConsultationRepository {
       params.push(encryptedNotes);
     }
 
-    // Partition key scheduled_at must be used if available for fast partition pruning
     let whereClause = `WHERE id = $${paramIndex++}`;
     params.push(id);
 
@@ -156,3 +152,4 @@ export class ConsultationRepository {
 }
 
 export default ConsultationRepository;
+

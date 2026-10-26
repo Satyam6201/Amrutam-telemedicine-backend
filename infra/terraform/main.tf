@@ -20,7 +20,6 @@ provider "aws" {
   }
 }
 
-# KMS Key for PHI and DB Storage Encryption (Envelope Encryption)
 resource "aws_kms_key" "amrutam_kms" {
   description             = "KMS Master Key for Amrutam Telemedicine PHI and Database Encryption"
   deletion_window_in_days = 30
@@ -32,7 +31,6 @@ resource "aws_kms_alias" "amrutam_kms_alias" {
   target_key_id = aws_kms_key.amrutam_kms.key_id
 }
 
-# VPC Configuration
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -43,7 +41,6 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Public and Private Subnets across 3 Availability Zones (ap-south-1a, 1b, 1c)
 data "aws_availability_zones" "available" {
   state = "available"
 }

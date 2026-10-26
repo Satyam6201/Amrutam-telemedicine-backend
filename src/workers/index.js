@@ -9,7 +9,6 @@ export function startWorkers() {
   const notificationWorker = startNotificationWorker();
   const slotWorker = startSlotReleaseWorker();
 
-  // Periodic fallback sweep every 60 seconds for any expired holds
   const intervalId = setInterval(async () => {
     try {
       await SlotService.cleanupExpiredSlots();
@@ -28,7 +27,6 @@ export function startWorkers() {
   return { notificationWorker, slotWorker, shutdown };
 }
 
-// Standalone execution
 if (process.argv[1].endsWith('workers/index.js')) {
   const { shutdown } = startWorkers();
   process.on('SIGTERM', async () => {
@@ -42,3 +40,4 @@ if (process.argv[1].endsWith('workers/index.js')) {
 }
 
 export default startWorkers;
+

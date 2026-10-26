@@ -10,7 +10,6 @@ const router = Router();
 
 router.use(authenticate);
 
-// Issue prescription (Doctor or Admin only, protected by idempotency)
 router.post(
   '/',
   authorizeRoles('DOCTOR', 'ADMIN'),
@@ -19,10 +18,10 @@ router.post(
   PrescriptionController.issuePrescription
 );
 
-// Get prescription for a consultation (Patient, Doctor, Admin)
 router.get(
   '/consultation/:consultationId',
   PrescriptionController.getByConsultationId
 );
 
 export default router;
+

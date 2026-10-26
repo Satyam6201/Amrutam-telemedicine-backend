@@ -1,6 +1,3 @@
-/**
- * Standardized API response format
- */
 export function successResponse(res, data = null, message = 'Success', statusCode = 200, meta = null) {
   const payload = {
     success: true,
@@ -49,3 +46,4 @@ export function errorResponse(res, message, statusCode = 500, errorCode = 'ERROR
 }
 
 export default { successResponse, paginatedResponse, errorResponse };
+

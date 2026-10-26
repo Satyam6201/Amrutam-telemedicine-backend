@@ -1,9 +1,7 @@
 import { query, withTransaction } from '../../../config/database.js';
 
 export class SlotRepository {
-  /**
-   * Get slots for a doctor on a specific date
-   */
+
   static async findSlotsByDoctorAndDate(doctorId, date, status) {
     const conditions = ['doctor_id = $1'];
     const params = [doctorId];
@@ -43,10 +41,6 @@ export class SlotRepository {
     return res.rows[0] || null;
   }
 
-  /**
-   * Atomically hold a slot for a patient (prevents race condition & double-booking)
-   * Can hold if AVAILABLE, or if currently HELD but the hold expired (held_until < NOW())
-   */
   static async holdSlot(slotId, patientId, ttlMinutes = 15) {
     const sql = `
       UPDATE availability_slots
@@ -64,9 +58,6 @@ export class SlotRepository {
     return res.rows[0] || null;
   }
 
-  /**
-   * Release a held slot back to AVAILABLE
-   */
   static async releaseSlot(slotId, patientId) {
     const sql = `
       UPDATE availability_slots
@@ -85,9 +76,6 @@ export class SlotRepository {
     return res.rows[0] || null;
   }
 
-  /**
-   * Confirm booking on held slot
-   */
   static async confirmSlot(slotId, patientId, client = null) {
     const sql = `
       UPDATE availability_slots
@@ -112,9 +100,6 @@ export class SlotRepository {
     return res.rows[0] || null;
   }
 
-  /**
-   * Release all expired held slots across the system
-   */
   static async releaseAllExpiredSlots() {
     const sql = `
       UPDATE availability_slots
@@ -131,9 +116,6 @@ export class SlotRepository {
     return res.rows;
   }
 
-  /**
-   * Bulk insert slots
-   */
   static async bulkCreateSlots(doctorId, date, slots) {
     return withTransaction(async (client) => {
       const inserted = [];
@@ -155,3 +137,4 @@ export class SlotRepository {
 }
 
 export default SlotRepository;
+

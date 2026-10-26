@@ -50,3 +50,4 @@ export function startNotificationWorker() {
 }
 
 export default startNotificationWorker;
+

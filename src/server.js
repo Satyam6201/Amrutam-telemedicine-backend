@@ -9,7 +9,6 @@ import logger from './utils/logger.js';
 const app = createApp();
 const server = http.createServer(app);
 
-// Start background workers
 const { shutdown: stopWorkers } = startWorkers();
 
 server.listen(config.port, () => {
@@ -21,7 +20,6 @@ server.listen(config.port, () => {
   logger.info(`Prometheus Metrics: http://localhost:${config.port}/metrics`);
 });
 
-// Graceful shutdown handling
 let isShuttingDown = false;
 
 async function gracefulShutdown(signal) {
@@ -30,19 +28,16 @@ async function gracefulShutdown(signal) {
 
   logger.info(`Received ${signal}. Starting graceful shutdown...`);
 
-  // Stop accepting new HTTP requests
   server.close(async () => {
     logger.info('HTTP server closed.');
 
     try {
-      // 1. Stop background workers
+
       await stopWorkers();
 
-      // 2. Close Redis connection
       await redis.quit();
       logger.info('Redis connection closed.');
 
-      // 3. Close PostgreSQL pool
       await pool.end();
       logger.info('PostgreSQL connection pool closed.');
 
@@ -54,7 +49,6 @@ async function gracefulShutdown(signal) {
     }
   });
 
-  // Force shutdown if cleanup takes longer than 10 seconds
   setTimeout(() => {
     logger.error('Graceful shutdown timed out after 10s. Forcing exit.');
     process.exit(1);
@@ -74,3 +68,4 @@ process.on('uncaughtException', (error) => {
 });
 
 export default server;
+

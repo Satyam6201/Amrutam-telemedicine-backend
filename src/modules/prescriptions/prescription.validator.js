@@ -24,3 +24,4 @@ export const issuePrescriptionSchema = z.object({
 export default {
   issuePrescriptionSchema,
 };
+

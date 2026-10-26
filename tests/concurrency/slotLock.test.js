@@ -15,7 +15,6 @@ describe('Concurrency & Race Condition Tests', () => {
   before(async () => {
     app = createApp();
 
-    // 1. Log in or create 5 different patients for concurrent requests
     for (let i = 1; i <= 5; i++) {
       const email = `concurrent_patient_${i}_${Date.now()}@amrutam.co.in`;
       const regRes = await request(app)
@@ -30,11 +29,9 @@ describe('Concurrency & Race Condition Tests', () => {
       patientTokens.push(regRes.body.data.tokens.accessToken);
     }
 
-    // 2. Get a doctor
     const docRes = await query('SELECT id FROM doctors WHERE is_approved = true LIMIT 1');
     doctorId = docRes.rows[0].id;
 
-    // 3. Create a dedicated slot for this race condition test
     const slotRes = await query(
       `INSERT INTO availability_slots (doctor_id, slot_date, start_time, end_time, status)
        VALUES ($1, CURRENT_DATE + INTERVAL '10 days', '12:00:00', '12:30:00', 'AVAILABLE')
@@ -45,7 +42,7 @@ describe('Concurrency & Race Condition Tests', () => {
   });
 
   after(async () => {
-    // Cleanup slot
+
     if (raceSlotId) {
       await query('DELETE FROM availability_slots WHERE id = $1', [raceSlotId]);
     }
@@ -55,7 +52,7 @@ describe('Concurrency & Race Condition Tests', () => {
   });
 
   it('should prevent double-booking: exactly 1 request succeeds out of 5 concurrent attempts', async () => {
-    // Fire 5 simultaneous requests to hold the same slot
+
     const concurrentRequests = patientTokens.map((token) =>
       request(app)
         .post('/api/v1/slots/hold')
@@ -79,7 +76,6 @@ describe('Concurrency & Race Condition Tests', () => {
       `Expected 4 conflicts (409), but got ${conflictResponses.length}`
     );
 
-    // Verify DB slot state
     const dbSlot = await query('SELECT status, held_by_patient_id FROM availability_slots WHERE id = $1', [
       raceSlotId,
     ]);
@@ -87,3 +83,4 @@ describe('Concurrency & Race Condition Tests', () => {
     assert.ok(dbSlot.rows[0].held_by_patient_id);
   });
 });
+

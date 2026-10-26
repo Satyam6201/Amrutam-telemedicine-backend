@@ -7,9 +7,7 @@ import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import logger from '../../utils/logger.js';
 
 export class PaymentService {
-  /**
-   * Initiate payment for consultation
-   */
+
   static async createPayment({ consultationId, amount, currency, paymentMethod }, patientId, idempotencyKey) {
     const consultation = await ConsultationRepository.findById(consultationId);
     if (!consultation) {
@@ -38,15 +36,12 @@ export class PaymentService {
       amount: payment.amount,
       currency: payment.currency,
       status: payment.status,
-      // Mock gateway checkout URL / SDK order ID
+
       gatewayOrderId: `order_${crypto.randomBytes(6).toString('hex')}`,
       paymentMethod,
     };
   }
 
-  /**
-   * Process payment gateway webhook & execute saga compensation if failed
-   */
   static async processWebhook({ paymentId, status, transactionId }) {
     const payment = await PaymentRepository.findById(paymentId);
     if (!payment) {
@@ -60,11 +55,10 @@ export class PaymentService {
 
     const updatedPayment = await PaymentRepository.updateStatus(paymentId, status);
 
-    // SAGA ORCHESTRATION:
     const consultation = await ConsultationRepository.findById(payment.consultation_id);
 
     if (status === 'CAPTURED') {
-      // Payment Successful: Confirm consultation
+
       await ConsultationRepository.updateStatus({
         id: consultation.id,
         status: 'CONFIRMED',
@@ -82,7 +76,7 @@ export class PaymentService {
         newState: { status: 'CAPTURED', amount: payment.amount },
       });
     } else if (status === 'FAILED') {
-      // Compensating Transaction: Release held slot and cancel consultation
+
       if (consultation && consultation.slot_id) {
         await SlotRepository.releaseSlot(consultation.slot_id, payment.patient_id);
       }
@@ -113,3 +107,4 @@ export class PaymentService {
 }
 
 export default PaymentService;
+

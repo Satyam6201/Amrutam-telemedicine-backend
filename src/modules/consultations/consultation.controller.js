@@ -86,3 +86,4 @@ export class ConsultationController {
 }
 
 export default ConsultationController;
+

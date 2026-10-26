@@ -1,9 +1,7 @@
 import { query } from '../../../config/database.js';
 
 export class AnalyticsRepository {
-  /**
-   * System overview metrics
-   */
+
   static async getOverviewMetrics() {
     const consultationsSql = `
       SELECT
@@ -45,9 +43,6 @@ export class AnalyticsRepository {
     };
   }
 
-  /**
-   * Doctor utilization rates & performance analytics
-   */
   static async getDoctorUtilization() {
     const sql = `
       SELECT
@@ -75,11 +70,8 @@ export class AnalyticsRepository {
     return res.rows;
   }
 
-  /**
-   * Peak consultation booking hours and patient retention
-   */
   static async getPeakHoursAndRetention() {
-    // Peak hours aggregation
+
     const peakHoursSql = `
       SELECT
         EXTRACT(HOUR FROM scheduled_at)::int as hour_of_day,
@@ -89,7 +81,6 @@ export class AnalyticsRepository {
       ORDER BY hour_of_day ASC
     `;
 
-    // Patient retention: % of patients who booked more than 1 consultation
     const retentionSql = `
       WITH patient_counts AS (
         SELECT patient_id, COUNT(*) as count
@@ -122,3 +113,4 @@ export class AnalyticsRepository {
 }
 
 export default AnalyticsRepository;
+

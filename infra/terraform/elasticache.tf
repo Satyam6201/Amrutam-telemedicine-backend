@@ -1,4 +1,3 @@
-# ElastiCache Redis Cluster with Multi-AZ Auto-Failover
 resource "aws_elasticache_subnet_group" "redis" {
   name       = "amrutam-${var.environment}-redis-subnet-group"
   subnet_ids = aws_subnet.private[*].id

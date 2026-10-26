@@ -3,7 +3,6 @@ import redis from '../../config/redis.js';
 import { ConflictError } from './errors.js';
 import logger from './logger.js';
 
-// Lua script to safely release lock only if the token matches
 const RELEASE_LOCK_SCRIPT = `
   if redis.call("get", KEYS[1]) == ARGV[1] then
     return redis.call("del", KEYS[1])
@@ -13,18 +12,13 @@ const RELEASE_LOCK_SCRIPT = `
 `;
 
 export class DistributedLock {
-  /**
-   * Acquire a distributed lock on a resource
-   * @param {string} resourceKey - e.g. "lock:slot:123"
-   * @param {number} ttlMs - lock expiration in milliseconds (default 10,000)
-   * @returns {string|null} Lock token if acquired, null if failed
-   */
+
   static async acquire(resourceKey, ttlMs = 10000) {
     const token = crypto.randomUUID();
     const key = `lock:${resourceKey}`;
 
     try {
-      // SET key token NX PX ttlMs
+
       const result = await redis.set(key, token, 'PX', ttlMs, 'NX');
       if (result === 'OK') {
         logger.debug({ resourceKey, token }, 'Acquired distributed lock');
@@ -37,12 +31,6 @@ export class DistributedLock {
     }
   }
 
-  /**
-   * Release the distributed lock safely
-   * @param {string} resourceKey
-   * @param {string} token
-   * @returns {boolean} True if released, false if lock was not held or owned
-   */
   static async release(resourceKey, token) {
     if (!token) return false;
     const key = `lock:${resourceKey}`;
@@ -62,12 +50,6 @@ export class DistributedLock {
     }
   }
 
-  /**
-   * Execute an async function within a distributed lock
-   * @param {string} resourceKey
-   * @param {number} ttlMs
-   * @param {Function} callback
-   */
   static async withLock(resourceKey, ttlMs, callback) {
     const token = await DistributedLock.acquire(resourceKey, ttlMs);
     if (!token) {
@@ -85,3 +67,4 @@ export class DistributedLock {
 }
 
 export default DistributedLock;
+

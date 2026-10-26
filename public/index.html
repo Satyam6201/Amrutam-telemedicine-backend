@@ -289,7 +289,7 @@
 </head>
 <body>
 
-  <!-- Top Bar -->
+  
   <header>
     <div class="header-container">
       <a href="/" class="brand">
@@ -310,7 +310,7 @@
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
+  
   <nav class="tabs-nav">
     <button class="tab-btn active" onclick="switchTab('bookingTab', this)">Doctor Booking & Slots</button>
     <button class="tab-btn" onclick="switchTab('prescriptionsTab', this)">Consultations & Prescriptions</button>
@@ -319,9 +319,9 @@
     <button class="tab-btn" onclick="switchTab('archTab', this)">Architecture & Security</button>
   </nav>
 
-  <!-- Main Body -->
+  
   <main>
-    <!-- TAB 1: DOCTOR BOOKING & SLOTS -->
+    
     <div id="bookingTab" class="tab-content active">
       <div class="grid-3" style="margin-bottom: 1.5rem;">
         <div class="stat-card">
@@ -342,7 +342,7 @@
       </div>
 
       <div class="grid-2">
-        <!-- Doctors List -->
+        
         <div class="card">
           <div class="card-title">
             <span>Verified Ayurvedic Physicians</span>
@@ -354,7 +354,7 @@
           </div>
         </div>
 
-        <!-- Slot Reservation & Booking -->
+        
         <div class="card">
           <div class="card-title">
             <span id="selectedDoctorTitle">Select a Physician</span>
@@ -366,7 +366,7 @@
             <p style="color: var(--text-muted); font-size: 0.85rem;">Select a doctor on the left to inspect slots.</p>
           </div>
 
-          <!-- Booking Form -->
+          
           <div id="bookingFormSection" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
             <div class="form-group">
               <label class="form-label">Patient Symptoms (Will be AES-256-GCM Encrypted at rest)</label>
@@ -382,7 +382,7 @@
       </div>
     </div>
 
-    <!-- TAB 2: CONSULTATIONS & PRESCRIPTIONS -->
+    
     <div id="prescriptionsTab" class="tab-content">
       <div class="card" style="margin-bottom: 1.5rem;">
         <div class="card-title">
@@ -410,7 +410,7 @@
         </div>
       </div>
 
-      <!-- Prescription Viewer Modal/Card -->
+      
       <div id="prescriptionDetailsCard" class="card" style="display: none;">
         <div class="card-title">
           <span id="prescriptionDocName">Prescription Details</span>
@@ -435,7 +435,7 @@
       </div>
     </div>
 
-    <!-- TAB 3: ADMIN ANALYTICS -->
+    
     <div id="analyticsTab" class="tab-content">
       <div class="grid-4" style="margin-bottom: 1.5rem;" id="analyticsKpis">
         <div class="stat-card">
@@ -486,7 +486,7 @@
       </div>
     </div>
 
-    <!-- TAB 4: AUDIT TRAIL & COMPLIANCE -->
+    
     <div id="auditTab" class="tab-content">
       <div class="card">
         <div class="card-title">
@@ -517,7 +517,7 @@
       </div>
     </div>
 
-    <!-- TAB 5: ARCHITECTURE & SECURITY SPECS -->
+    
     <div id="archTab" class="tab-content">
       <div class="grid-2">
         <div class="card">
@@ -545,7 +545,7 @@
     let selectedSlotId = null;
     let authTokens = null;
 
-    // Switch Tabs
+    
     function switchTab(tabId, el) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -558,7 +558,7 @@
       if (tabId === 'archTab') checkSystemHealth();
     }
 
-    // Auto-login patient & admin credentials for live browser demo
+    
     async function initSession() {
       try {
         const res = await fetch('/api/v1/auth/login', {
@@ -578,7 +578,7 @@
       checkSystemHealth();
     }
 
-    // Load Doctors
+    
     async function loadDoctors() {
       const container = document.getElementById('doctorsListContainer');
       try {
@@ -616,7 +616,7 @@
       }
     }
 
-    // Select Doctor & Fetch Slots
+    
     async function selectDoctor(docId, docTitle) {
       activeDoctorId = docId;
       document.getElementById('selectedDoctorTitle').textContent = docTitle;
@@ -647,7 +647,7 @@
       }
     }
 
-    // Pick Slot
+    
     function pickSlot(slotId, status, el) {
       if (status !== 'AVAILABLE') return;
       document.querySelectorAll('.slot-item').forEach(s => s.classList.remove('selected'));
@@ -656,7 +656,7 @@
       document.getElementById('bookingFormSection').style.display = 'block';
     }
 
-    // Hold Slot with 15-minute lock
+    
     async function holdSelectedSlot() {
       if (!selectedSlotId) return alert('Select an available slot first');
       const token = sessionStorage.getItem('token');
@@ -685,7 +685,7 @@
       }
     }
 
-    // Hold Countdown
+    
     let holdInterval;
     function startHoldCountdown(durationSeconds) {
       clearInterval(holdInterval);
@@ -702,7 +702,7 @@
       }, 1000);
     }
 
-    // Book Consultation
+    
     async function bookConsultation() {
       if (!selectedSlotId) return alert('Select an available slot first');
       const symptoms = document.getElementById('symptomsInput').value || 'Pitta dosha imbalance, skin dryness, hyperacidity';
@@ -733,7 +733,7 @@
       }
     }
 
-    // Load Consultations
+    
     async function loadConsultations() {
       const token = sessionStorage.getItem('token');
       const tbody = document.getElementById('consultationsTableBody');
@@ -763,7 +763,7 @@
       }
     }
 
-    // View Prescription
+    
     async function viewPrescription(consultationId) {
       const token = sessionStorage.getItem('token');
       const card = document.getElementById('prescriptionDetailsCard');
@@ -799,7 +799,7 @@
       }
     }
 
-    // Load Admin Analytics
+    
     async function loadAnalytics() {
       try {
         const adminRes = await fetch('/api/v1/auth/login', {
@@ -810,7 +810,7 @@
         const adminData = await adminRes.json();
         const adminToken = adminData.data.tokens.accessToken;
 
-        // Overview
+        
         const overviewRes = await fetch('/api/v1/admin/analytics/overview', {
           headers: { 'Authorization': `Bearer ${adminToken}` }
         });
@@ -821,7 +821,7 @@
           document.getElementById('kpiTotalDoctors').textContent = overview.data.users.total_doctors;
         }
 
-        // Doctor Utilization
+        
         const utilRes = await fetch('/api/v1/admin/analytics/doctor-utilization', {
           headers: { 'Authorization': `Bearer ${adminToken}` }
         });
@@ -841,7 +841,7 @@
           `).join('');
         }
 
-        // Retention
+        
         const retRes = await fetch('/api/v1/admin/analytics/retention-and-peak', {
           headers: { 'Authorization': `Bearer ${adminToken}` }
         });
@@ -854,7 +854,7 @@
       }
     }
 
-    // Load Audit Logs
+    
     async function loadAuditLogs() {
       const tbody = document.getElementById('auditTableBody');
       try {
@@ -890,7 +890,7 @@
       }
     }
 
-    // Verify Audit Integrity
+    
     async function verifyAuditIntegrity() {
       const box = document.getElementById('integrityAlertBox');
       box.style.display = 'block';
@@ -928,7 +928,7 @@
       }
     }
 
-    // Check System Health
+    
     async function checkSystemHealth() {
       const el = document.getElementById('systemHealthJson');
       try {
@@ -940,7 +940,7 @@
       }
     }
 
-    // Initialize session on load
+    
     window.onload = initSession;
   </script>
 </body>

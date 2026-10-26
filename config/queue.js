@@ -10,7 +10,6 @@ export const queueConnection = {
   maxRetriesPerRequest: null,
 };
 
-// Queue definitions
 export const NOTIFICATION_QUEUE = 'amrutam_notifications';
 export const SLOT_EXPIRATION_QUEUE = 'amrutam_slot_expirations';
 export const ANALYTICS_QUEUE = 'amrutam_analytics';
@@ -68,3 +67,4 @@ export default {
   analyticsQueue,
   closeQueues,
 };
+

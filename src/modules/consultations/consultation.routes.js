@@ -17,14 +17,12 @@ const bookingLimiter = rateLimiter({ windowMs: 60000, max: 20, keyPrefix: 'rl:co
 
 router.use(authenticate);
 
-// List consultations for current user (Doctor, Patient, Admin)
 router.get(
   '/',
   validate({ query: listConsultationsSchema }),
   ConsultationController.listConsultations
 );
 
-// Book new consultation (Patient only, protected by idempotency)
 router.post(
   '/',
   authorizeRoles('PATIENT', 'ADMIN'),
@@ -34,10 +32,8 @@ router.post(
   ConsultationController.bookConsultation
 );
 
-// Get specific consultation details
 router.get('/:id', ConsultationController.getConsultationById);
 
-// Update consultation status (Doctor / Admin)
 router.patch(
   '/:id/status',
   authorizeRoles('DOCTOR', 'ADMIN'),
@@ -45,7 +41,6 @@ router.patch(
   ConsultationController.updateStatus
 );
 
-// Cancel consultation (Patient, Doctor, Admin)
 router.post(
   '/:id/cancel',
   validate({ body: cancelConsultationSchema }),
@@ -53,3 +48,4 @@ router.post(
 );
 
 export default router;
+

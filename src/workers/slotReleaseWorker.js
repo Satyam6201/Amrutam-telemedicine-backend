@@ -10,7 +10,6 @@ export function startSlotReleaseWorker() {
       logger.info({ jobId: job.id, data: job.data }, 'Processing slot expiration check');
       const { slotId } = job.data;
 
-      // Clean up any slots that have reached expiration
       const released = await SlotService.cleanupExpiredSlots();
       return { releasedCount: released.length };
     },
@@ -32,3 +31,4 @@ export function startSlotReleaseWorker() {
 }
 
 export default startSlotReleaseWorker;
+

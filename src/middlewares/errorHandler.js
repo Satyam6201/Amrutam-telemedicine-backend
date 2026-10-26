@@ -6,7 +6,6 @@ import config from '../../config/index.js';
 export function errorHandler(err, req, res, _next) {
   const requestId = req.headers['x-request-id'] || 'req-unknown';
 
-  // 1. Handle Known Operational Application Errors
   if (err instanceof AppError) {
     logger.warn(
       {
@@ -24,7 +23,6 @@ export function errorHandler(err, req, res, _next) {
     return errorResponse(res, err.message, err.statusCode, err.errorCode, err.details);
   }
 
-  // 2. Handle PostgreSQL Unique Constraint Violations (23505)
   if (err.code === '23505') {
     logger.warn({ requestId, detail: err.detail }, 'Postgres unique constraint violation');
     return errorResponse(res, 'A duplicate record already exists with the provided information.', 409, 'DUPLICATE_ENTRY', {
@@ -32,7 +30,6 @@ export function errorHandler(err, req, res, _next) {
     });
   }
 
-  // 3. Handle PostgreSQL Foreign Key Constraint Violations (23503)
   if (err.code === '23503') {
     logger.warn({ requestId, detail: err.detail }, 'Postgres foreign key violation');
     return errorResponse(res, 'Referenced record was not found or has dependent references.', 400, 'FOREIGN_KEY_VIOLATION', {
@@ -40,12 +37,10 @@ export function errorHandler(err, req, res, _next) {
     });
   }
 
-  // 4. Handle JSON Syntax Errors (malformed payload in request body)
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     return errorResponse(res, 'Malformed JSON payload in request body', 400, 'INVALID_JSON');
   }
 
-  // 5. Unhandled / Programmer Errors (500)
   logger.error(
     {
       requestId,
@@ -62,3 +57,4 @@ export function errorHandler(err, req, res, _next) {
 }
 
 export default errorHandler;
+

@@ -48,7 +48,6 @@ describe('API Idempotency Integration Tests', () => {
     const idempotencyKey = `test-idem-key-${Date.now()}`;
     const payload = { slotId: testSlotId };
 
-    // Request 1: Fresh execution
     const res1 = await request(app)
       .post('/api/v1/slots/hold')
       .set('Authorization', `Bearer ${patientToken}`)
@@ -59,7 +58,6 @@ describe('API Idempotency Integration Tests', () => {
     assert.strictEqual(res1.body.data.status, 'HELD');
     assert.strictEqual(res1.headers['x-idempotent-replay'], undefined);
 
-    // Request 2: Replay of exact same request with same idempotency key
     const res2 = await request(app)
       .post('/api/v1/slots/hold')
       .set('Authorization', `Bearer ${patientToken}`)
@@ -74,14 +72,12 @@ describe('API Idempotency Integration Tests', () => {
   it('should reject reused Idempotency-Key with differing payload (422)', async () => {
     const idempotencyKey = `test-mismatch-key-${Date.now()}`;
 
-    // Request 1: Hold the slot
     await request(app)
       .post('/api/v1/slots/hold')
       .set('Authorization', `Bearer ${patientToken}`)
       .set('Idempotency-Key', idempotencyKey)
       .send({ slotId: testSlotId });
 
-    // Request 2: Different slot ID using same idempotency key
     const res2 = await request(app)
       .post('/api/v1/slots/hold')
       .set('Authorization', `Bearer ${patientToken}`)
@@ -91,3 +87,4 @@ describe('API Idempotency Integration Tests', () => {
     assert.strictEqual(res2.status, 422);
   });
 });
+

@@ -40,7 +40,7 @@ export class AuthRepository {
     consultationFee,
   }) {
     return withTransaction(async (client) => {
-      // 1. Create user
+
       const userRes = await client.query(
         `INSERT INTO users (email, password_hash, role, phone, is_verified)
          VALUES ($1, $2, $3, $4, true)
@@ -49,14 +49,12 @@ export class AuthRepository {
       );
       const user = userRes.rows[0];
 
-      // 2. Create profile
       await client.query(
         `INSERT INTO profiles (user_id, first_name, last_name)
          VALUES ($1, $2, $3)`,
         [user.id, firstName, lastName]
       );
 
-      // 3. If doctor, create doctor record
       let doctorId = null;
       if (role === 'DOCTOR') {
         const docRes = await client.query(
@@ -111,3 +109,4 @@ export class AuthRepository {
 }
 
 export default AuthRepository;
+

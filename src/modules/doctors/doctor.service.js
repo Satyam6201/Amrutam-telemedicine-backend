@@ -5,9 +5,7 @@ import { hashPayload } from '../../utils/crypto.js';
 import logger from '../../utils/logger.js';
 
 export class DoctorService {
-  /**
-   * Search doctors with Redis caching for ultra-low p95 read latency (<50ms)
-   */
+
   static async searchDoctors(filters) {
     const cacheKey = `cache:doctors:search:${hashPayload(filters)}`;
 
@@ -24,7 +22,7 @@ export class DoctorService {
     const result = await DoctorRepository.searchDoctors(filters);
 
     try {
-      await redis.set(cacheKey, JSON.stringify(result), 'EX', 300); // 5 min TTL
+      await redis.set(cacheKey, JSON.stringify(result), 'EX', 300);
     } catch (err) {
       logger.warn({ err: err.message }, 'Redis search cache write error');
     }
@@ -32,9 +30,6 @@ export class DoctorService {
     return result;
   }
 
-  /**
-   * Get doctor by ID with cache-aside
-   */
   static async getDoctorById(id) {
     const cacheKey = `cache:doctor:${id}`;
 
@@ -53,7 +48,7 @@ export class DoctorService {
     }
 
     try {
-      await redis.set(cacheKey, JSON.stringify(doctor), 'EX', 600); // 10 min TTL
+      await redis.set(cacheKey, JSON.stringify(doctor), 'EX', 600);
     } catch (err) {
       logger.warn({ err: err.message }, 'Redis doctor cache write error');
     }
@@ -71,7 +66,7 @@ export class DoctorService {
     const specialties = await DoctorRepository.getAllSpecialties();
 
     try {
-      await redis.set(cacheKey, JSON.stringify(specialties), 'EX', 3600); // 1 hour TTL
+      await redis.set(cacheKey, JSON.stringify(specialties), 'EX', 3600);
     } catch (err) {}
 
     return specialties;
@@ -82,10 +77,11 @@ export class DoctorService {
     if (!doctor) {
       throw new NotFoundError(`Doctor with ID ${id} not found.`);
     }
-    // Invalidate caches
+
     await redis.del(`cache:doctor:${id}`);
     return doctor;
   }
 }
 
 export default DoctorService;
+

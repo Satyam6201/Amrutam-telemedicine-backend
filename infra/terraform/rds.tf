@@ -1,4 +1,3 @@
-# Multi-AZ Aurora Serverless / Provisioned PostgreSQL Cluster for High Availability (99.95%)
 resource "aws_db_subnet_group" "rds" {
   name       = "amrutam-${var.environment}-rds-subnet-group"
   subnet_ids = aws_subnet.private[*].id

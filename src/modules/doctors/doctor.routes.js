@@ -7,12 +7,10 @@ import { doctorSearchSchema } from './doctor.validator.js';
 
 const router = Router();
 
-// Public doctor search and catalogs
 router.get('/', validate({ query: doctorSearchSchema }), DoctorController.searchDoctors);
 router.get('/specialties', DoctorController.getSpecialties);
 router.get('/:id', DoctorController.getDoctorById);
 
-// Admin-only doctor approval
 router.patch(
   '/:id/approve',
   authenticate,
@@ -21,3 +19,4 @@ router.patch(
 );
 
 export default router;
+

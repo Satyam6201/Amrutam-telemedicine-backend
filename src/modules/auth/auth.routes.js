@@ -12,7 +12,6 @@ import {
 
 const router = Router();
 
-// Rate limiting on sensitive auth endpoints (15 req/min)
 const authLimiter = rateLimiter({ windowMs: 60000, max: 20, keyPrefix: 'rl:auth' });
 
 router.post(
@@ -55,3 +54,4 @@ router.post(
 );
 
 export default router;
+

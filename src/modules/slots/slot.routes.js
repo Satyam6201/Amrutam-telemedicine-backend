@@ -15,14 +15,12 @@ import {
 const router = Router();
 const bookingLimiter = rateLimiter({ windowMs: 60000, max: 30, keyPrefix: 'rl:booking' });
 
-// Get slots for a doctor
 router.get(
   '/doctors/:doctorId/slots',
   validate({ query: getSlotsSchema }),
   SlotController.getDoctorSlots
 );
 
-// Hold a slot (Protected, requires Idempotency header to prevent accidental double-clicks)
 router.post(
   '/slots/hold',
   authenticate,
@@ -32,7 +30,6 @@ router.post(
   SlotController.holdSlot
 );
 
-// Release held slot
 router.post(
   '/slots/release',
   authenticate,
@@ -41,7 +38,6 @@ router.post(
   SlotController.releaseSlot
 );
 
-// Doctor or Admin bulk slot generation
 router.post(
   '/doctors/:doctorId/slots/bulk',
   authenticate,
@@ -51,3 +47,4 @@ router.post(
 );
 
 export default router;
+

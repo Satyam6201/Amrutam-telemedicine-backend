@@ -31,3 +31,4 @@ export class AnalyticsController {
 }
 
 export default AnalyticsController;
+

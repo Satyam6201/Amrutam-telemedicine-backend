@@ -52,7 +52,6 @@ describe('Cryptography & PHI Security Tests', () => {
     assert.strictEqual(hash1, hash2, 'Identical inputs must yield identical SHA-256 hash');
     assert.strictEqual(hash1.length, 64, 'SHA-256 hash must be 64 hex characters');
 
-    // Tampering test: altering newVal should produce a completely different hash
     const tamperedHash = computeAuditHash({
       ...auditData,
       newVal: { status: 'COMPLETED' },
@@ -80,3 +79,4 @@ describe('Cryptography & PHI Security Tests', () => {
     assert.strictEqual(hash.length, 64);
   });
 });
+

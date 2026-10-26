@@ -39,7 +39,7 @@ export class SlotController {
 
   static async bulkCreateSlots(req, res, next) {
     try {
-      // Find doctor record for the authenticated doctor user
+
       const doctor = await DoctorRepository.findDoctorById(req.params.doctorId);
       if (!doctor || (req.user.role === 'DOCTOR' && doctor.user_id !== req.user.id)) {
         throw new ForbiddenError('You can only create slots for your own doctor profile');
@@ -55,3 +55,4 @@ export class SlotController {
 }
 
 export default SlotController;
+
