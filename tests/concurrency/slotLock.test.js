@@ -4,6 +4,7 @@ import request from 'supertest';
 import createApp from '../../src/app.js';
 import { pool, query } from '../../config/database.js';
 import redis from '../../config/redis.js';
+import { closeQueues } from '../../config/queue.js';
 
 describe('Concurrency & Race Condition Tests', () => {
   let app;
@@ -48,9 +49,9 @@ describe('Concurrency & Race Condition Tests', () => {
     if (raceSlotId) {
       await query('DELETE FROM availability_slots WHERE id = $1', [raceSlotId]);
     }
+    await closeQueues();
     await pool.end();
     await redis.quit();
-    process.exit(0);
   });
 
   it('should prevent double-booking: exactly 1 request succeeds out of 5 concurrent attempts', async () => {

@@ -4,6 +4,7 @@ import request from 'supertest';
 import createApp from '../../src/app.js';
 import { pool, query } from '../../config/database.js';
 import redis from '../../config/redis.js';
+import { closeQueues } from '../../config/queue.js';
 
 describe('API Idempotency Integration Tests', () => {
   let app;
@@ -38,9 +39,9 @@ describe('API Idempotency Integration Tests', () => {
     if (testSlotId) {
       await query('DELETE FROM availability_slots WHERE id = $1', [testSlotId]);
     }
+    await closeQueues();
     await pool.end();
     await redis.quit();
-    process.exit(0);
   });
 
   it('should replay cached response when Idempotency-Key is repeated', async () => {

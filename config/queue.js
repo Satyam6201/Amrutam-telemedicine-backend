@@ -54,8 +54,17 @@ export const analyticsQueue = new Queue(ANALYTICS_QUEUE, {
 
 logger.info('BullMQ Queues initialized (Notifications, Slot Expirations, Analytics)');
 
+export async function closeQueues() {
+  await Promise.all([
+    notificationQueue.close().catch(() => {}),
+    slotExpirationQueue.close().catch(() => {}),
+    analyticsQueue.close().catch(() => {}),
+  ]);
+}
+
 export default {
   notificationQueue,
   slotExpirationQueue,
   analyticsQueue,
+  closeQueues,
 };
