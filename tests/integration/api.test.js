@@ -4,6 +4,7 @@ import request from 'supertest';
 import createApp from '../../src/app.js';
 import { pool } from '../../config/database.js';
 import redis from '../../config/redis.js';
+import { closeQueues } from '../../config/queue.js';
 
 describe('Amrutam Telemedicine Backend Integration Tests', () => {
   let app;
@@ -20,9 +21,9 @@ describe('Amrutam Telemedicine Backend Integration Tests', () => {
 
   after(async () => {
     // Clean up connections after tests
+    await closeQueues();
     await pool.end();
     await redis.quit();
-    process.exit(0);
   });
 
   // 1. HEALTH CHECKS & OBSERVABILITY

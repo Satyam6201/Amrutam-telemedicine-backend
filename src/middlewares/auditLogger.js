@@ -1,9 +1,11 @@
-import { query } from '../../config/database.js';
+import { pool } from '../../config/database.js';
 import { computeAuditHash } from '../utils/crypto.js';
 import logger from '../utils/logger.js';
 
 /**
  * Persist an immutable audit log entry linked to the previous log's SHA-256 hash
+ * Employs a transaction-level PostgreSQL advisory lock to ensure strictly linear,
+ * concurrency-safe cryptographic hash chaining under high parallel load.
  */
 export async function logAuditEvent({
   userId,
@@ -15,11 +17,16 @@ export async function logAuditEvent({
   previousState = null,
   newState = null,
 }) {
+  const client = await pool.connect();
   try {
-    // 1. Fetch latest audit log hash to maintain cryptographic chain
-    const latestRes = await query(
+    await client.query('BEGIN');
+    // 1. Transaction-scoped advisory lock serializes cryptographic chain construction
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('amrutam_audit_log_chain'))");
+
+    // 2. Fetch latest audit log hash to maintain cryptographic chain
+    const latestRes = await client.query(
       `SELECT hash_signature FROM audit_logs
-       ORDER BY timestamp DESC, id DESC
+       ORDER BY id DESC
        LIMIT 1`
     );
 
@@ -29,7 +36,7 @@ export async function logAuditEvent({
 
     const timestamp = new Date().toISOString();
 
-    // 2. Compute tamper-evident hash signature
+    // 3. Compute tamper-evident hash signature
     const hashSignature = computeAuditHash({
       prevHash,
       userId,
@@ -41,8 +48,8 @@ export async function logAuditEvent({
       newVal: newState,
     });
 
-    // 3. Insert into audit_logs table
-    await query(
+    // 4. Insert into audit_logs table
+    await client.query(
       `INSERT INTO audit_logs (
         user_id, action, resource_type, resource_id, ip_address, user_agent,
         previous_state, new_state, prev_hash, hash_signature, timestamp
@@ -63,9 +70,13 @@ export async function logAuditEvent({
       ]
     );
 
+    await client.query('COMMIT');
     logger.debug({ action, resourceType, resourceId }, 'Audit log recorded');
   } catch (error) {
+    await client.query('ROLLBACK');
     logger.error({ err: error.message, action, resourceId }, 'Failed to record audit log');
+  } finally {
+    client.release();
   }
 }
 

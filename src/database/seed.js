@@ -312,7 +312,8 @@ export async function seedDatabase() {
       ]
     );
 
-    // 7. Seed Initial Tamper-Evident Audit Log
+    // 7. Seed Initial Tamper-Evident Audit Log (Reset audit table for clean chain)
+    await query('TRUNCATE audit_logs CASCADE');
     const initialAuditTimestamp = new Date().toISOString();
     const auditHash = computeAuditHash({
       prevHash: '0000000000000000000000000000000000000000000000000000000000000000',

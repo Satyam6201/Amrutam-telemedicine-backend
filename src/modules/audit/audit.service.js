@@ -22,14 +22,14 @@ export class AuditService {
       };
     }
 
-    let previousHash = '0000000000000000000000000000000000000000000000000000000000000000';
+    let previousHash = logs[0].prev_hash;
     const violations = [];
 
     for (let i = 0; i < logs.length; i++) {
       const record = logs[i];
 
       // 1. Verify prev_hash matches prior entry's hash
-      if (i > 0 && record.prev_hash !== previousHash) {
+      if (record.prev_hash !== previousHash) {
         violations.push({
           logId: record.id,
           expectedPrevHash: previousHash,

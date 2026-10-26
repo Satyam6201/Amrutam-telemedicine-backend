@@ -58,7 +58,7 @@ export class AuditRepository {
       SELECT id, user_id, action, resource_type, resource_id, timestamp,
              previous_state, new_state, prev_hash, hash_signature
       FROM audit_logs
-      ORDER BY timestamp ASC, id ASC
+      ORDER BY id ASC
       LIMIT $1
     `;
     const res = await query(sql, [limit]);
