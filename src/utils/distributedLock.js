@@ -1,0 +1,87 @@
+import crypto from 'crypto';
+import redis from '../../config/redis.js';
+import { ConflictError } from './errors.js';
+import logger from './logger.js';
+
+// Lua script to safely release lock only if the token matches
+const RELEASE_LOCK_SCRIPT = `
+  if redis.call("get", KEYS[1]) == ARGV[1] then
+    return redis.call("del", KEYS[1])
+  else
+    return 0
+  end
+`;
+
+export class DistributedLock {
+  /**
+   * Acquire a distributed lock on a resource
+   * @param {string} resourceKey - e.g. "lock:slot:123"
+   * @param {number} ttlMs - lock expiration in milliseconds (default 10,000)
+   * @returns {string|null} Lock token if acquired, null if failed
+   */
+  static async acquire(resourceKey, ttlMs = 10000) {
+    const token = crypto.randomUUID();
+    const key = `lock:${resourceKey}`;
+
+    try {
+      // SET key token NX PX ttlMs
+      const result = await redis.set(key, token, 'PX', ttlMs, 'NX');
+      if (result === 'OK') {
+        logger.debug({ resourceKey, token }, 'Acquired distributed lock');
+        return token;
+      }
+      return null;
+    } catch (error) {
+      logger.error({ error: error.message, resourceKey }, 'Failed to acquire distributed lock');
+      return null;
+    }
+  }
+
+  /**
+   * Release the distributed lock safely
+   * @param {string} resourceKey
+   * @param {string} token
+   * @returns {boolean} True if released, false if lock was not held or owned
+   */
+  static async release(resourceKey, token) {
+    if (!token) return false;
+    const key = `lock:${resourceKey}`;
+
+    try {
+      const result = await redis.eval(RELEASE_LOCK_SCRIPT, 1, key, token);
+      const released = result === 1;
+      if (released) {
+        logger.debug({ resourceKey, token }, 'Released distributed lock');
+      } else {
+        logger.warn({ resourceKey, token }, 'Lock was already expired or owned by another process');
+      }
+      return released;
+    } catch (error) {
+      logger.error({ error: error.message, resourceKey }, 'Error releasing distributed lock');
+      return false;
+    }
+  }
+
+  /**
+   * Execute an async function within a distributed lock
+   * @param {string} resourceKey
+   * @param {number} ttlMs
+   * @param {Function} callback
+   */
+  static async withLock(resourceKey, ttlMs, callback) {
+    const token = await DistributedLock.acquire(resourceKey, ttlMs);
+    if (!token) {
+      throw new ConflictError(
+        `Resource is currently locked by a concurrent operation. Please retry: ${resourceKey}`
+      );
+    }
+
+    try {
+      return await callback();
+    } finally {
+      await DistributedLock.release(resourceKey, token);
+    }
+  }
+}
+
+export default DistributedLock;
