@@ -1,0 +1,118 @@
+name: Amrutam Telemedicine Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  audit-and-lint:
+    name: Security Audit & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Security Vulnerability Scan (npm audit)
+        run: npm audit --audit-level=critical
+
+  test:
+    name: Automated Unit, Integration & Concurrency Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: amrutam_telemedicine
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      PORT: 4000
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5433
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: amrutam_telemedicine
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6380
+      JWT_SECRET: ci-test-jwt-secret-key-32-bytes-long-super-safe
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-key-32-bytes-long-super-safe
+      ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Database Migrations
+        run: npm run db:migrate
+
+      - name: Seed Database Reference Data
+        run: npm run db:seed
+
+      - name: Run Unit Tests
+        run: node --test tests/unit/**/*.test.js
+
+      - name: Run Concurrency Race Condition Tests
+        run: node --test tests/concurrency/**/*.test.js
+
+      - name: Run API Integration Tests
+        run: node --test tests/integration/**/*.test.js
+
+  docker-build:
+    name: Container Build & Health Validation
+    runs-on: ubuntu-latest
+    needs: [audit-and-lint, test]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Production Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./infra/docker/Dockerfile
+          push: false
+          tags: amrutam/telemedicine-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: amrutam-backend-service
+  namespace: telemedicine
+  labels:
+    app: amrutam-backend-api
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 4000
+      protocol: TCP
+      name: http
+  selector:
+    app: amrutam-backend-api
