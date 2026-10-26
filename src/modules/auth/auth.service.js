@@ -4,6 +4,7 @@ import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import config from '../../../config/index.js';
 import AuthRepository from './auth.repository.js';
+import { encryptPHI, decryptPHI } from '../../utils/crypto.js';
 import { ConflictError, UnauthorizedError, BadRequestError } from '../../utils/errors.js';
 import { logAuditEvent } from '../../middlewares/auditLogger.js';
 
@@ -59,7 +60,8 @@ export class AuthService {
         };
       }
 
-      const isValidToken = authenticator.check(mfaCode, user.mfa_secret);
+      const mfaSecret = user.mfa_secret && user.mfa_secret.startsWith('v1:') ? decryptPHI(user.mfa_secret) : user.mfa_secret;
+      const isValidToken = authenticator.check(mfaCode, mfaSecret);
       if (!isValidToken) {
         throw new UnauthorizedError('Invalid MFA verification code.');
       }
@@ -135,7 +137,7 @@ export class AuthService {
     const otpauth = authenticator.keyuri(user.email, config.mfa.issuer, secret);
     const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
 
-    await AuthRepository.updateMfaSecret(userId, secret);
+    await AuthRepository.updateMfaSecret(userId, encryptPHI(secret));
 
     return { secret, qrCodeDataUrl, otpauth };
   }
@@ -149,7 +151,8 @@ export class AuthService {
       throw new BadRequestError('MFA setup must be initiated before verification.');
     }
 
-    const isValid = authenticator.check(token, user.mfa_secret);
+    const mfaSecret = user.mfa_secret && user.mfa_secret.startsWith('v1:') ? decryptPHI(user.mfa_secret) : user.mfa_secret;
+    const isValid = authenticator.check(token, mfaSecret);
     if (!isValid) {
       throw new BadRequestError('Invalid verification code.');
     }

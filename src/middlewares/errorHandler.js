@@ -25,16 +25,12 @@ export function errorHandler(err, req, res, _next) {
 
   if (err.code === '23505') {
     logger.warn({ requestId, detail: err.detail }, 'Postgres unique constraint violation');
-    return errorResponse(res, 'A duplicate record already exists with the provided information.', 409, 'DUPLICATE_ENTRY', {
-      detail: err.detail,
-    });
+    return errorResponse(res, 'A duplicate record already exists with the provided information.', 409, 'DUPLICATE_ENTRY');
   }
 
   if (err.code === '23503') {
     logger.warn({ requestId, detail: err.detail }, 'Postgres foreign key violation');
-    return errorResponse(res, 'Referenced record was not found or has dependent references.', 400, 'FOREIGN_KEY_VIOLATION', {
-      detail: err.detail,
-    });
+    return errorResponse(res, 'Referenced record was not found or has dependent references.', 400, 'FOREIGN_KEY_VIOLATION');
   }
 
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {

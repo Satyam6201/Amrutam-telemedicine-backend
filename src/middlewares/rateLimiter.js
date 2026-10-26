@@ -4,7 +4,7 @@ import logger from '../utils/logger.js';
 
 export function rateLimiter({ windowMs = 60000, max = 120, keyPrefix = 'rl:global' } = {}) {
   return async (req, res, next) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const identifier = req.user ? `${req.user.id}` : ip;
     const redisKey = `${keyPrefix}:${identifier}`;
     const now = Date.now();

@@ -26,7 +26,7 @@ resource "aws_rds_cluster" "postgresql" {
 }
 
 resource "aws_rds_cluster_instance" "cluster_instances" {
-  count              = 3 # 1 Writer + 2 Read Replicas
+  count              = 3
   identifier         = "amrutam-${var.environment}-pg-instance-${count.index + 1}"
   cluster_identifier = aws_rds_cluster.postgresql.id
   instance_class     = var.db_instance_class

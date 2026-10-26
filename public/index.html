@@ -31,8 +31,7 @@
       color: var(--text);
       line-height: 1.5;
     }
-    /* Header */
-    header {
+  header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       position: sticky;
@@ -115,7 +114,6 @@
     .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
     .btn-outline:hover { background: #edf2f7; }
 
-    /* Navigation Tabs */
     .tabs-nav {
       max-width: 1400px;
       margin: 1.5rem auto 0;
@@ -142,7 +140,6 @@
     }
     .tab-btn:hover:not(.active) { color: var(--text); }
 
-    /* Main Container */
     main {
       max-width: 1400px;
       margin: 1.5rem auto 3rem;
@@ -151,7 +148,6 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* Cards & Layout */
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
@@ -176,7 +172,6 @@
     }
     .card-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; }
 
-    /* Stat Cards */
     .stat-card {
       background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
       padding: 1.25rem;
@@ -187,7 +182,6 @@
     .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--primary); margin: 4px 0; }
     .stat-sub { font-size: 0.8rem; color: var(--success); font-weight: 600; }
 
-    /* Doctor Card */
     .doctor-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -230,7 +224,6 @@
       margin-bottom: 4px;
     }
 
-    /* Slots Grid */
     .slots-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -253,7 +246,6 @@
     .slot-item.booked { background: #edf2f7; color: #a0aec0; border-color: #e2e8f0; cursor: not-allowed; text-decoration: line-through; }
     .slot-item.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    /* Forms */
     .form-group { margin-bottom: 1rem; }
     .form-label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
     .form-control {
@@ -266,7 +258,6 @@
     }
     .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(27, 77, 62, 0.1); }
 
-    /* Code & Terminal View */
     .code-box {
       font-family: 'JetBrains Mono', monospace;
       background: #1a202c;
@@ -279,7 +270,6 @@
       max-height: 250px;
     }
 
-    /* Table */
     .table-container { overflow-x: auto; margin-top: 1rem; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -545,6 +535,16 @@
     let selectedSlotId = null;
     let authTokens = null;
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     
     function switchTab(tabId, el) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -590,16 +590,16 @@
         }
 
         container.innerHTML = json.data.map(doc => `
-          <div class="doctor-card" onclick="selectDoctor('${doc.id}', 'Dr. ${doc.first_name} ${doc.last_name} (${doc.qualification})')">
+          <div class="doctor-card" onclick="selectDoctor('${doc.id}', 'Dr. ${escapeHtml(doc.first_name)} ${escapeHtml(doc.last_name)} (${escapeHtml(doc.qualification)})')">
             <div class="doctor-header">
-              <div class="doctor-avatar">${doc.first_name[0]}${doc.last_name[0]}</div>
+              <div class="doctor-avatar">${escapeHtml(doc.first_name[0])}${escapeHtml(doc.last_name[0])}</div>
               <div class="doctor-info">
-                <h4>Dr. ${doc.first_name} ${doc.last_name}</h4>
-                <p>${doc.qualification} • ${doc.experience_years} yrs exp</p>
+                <h4>Dr. ${escapeHtml(doc.first_name)} ${escapeHtml(doc.last_name)}</h4>
+                <p>${escapeHtml(doc.qualification)} • ${doc.experience_years} yrs exp</p>
               </div>
             </div>
             <div>
-              ${(doc.specialties || []).map(s => `<span class="spec-pill">${s.name}</span>`).join('')}
+              ${(doc.specialties || []).map(s => `<span class="spec-pill">${escapeHtml(s.name)}</span>`).join('')}
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.85rem;">
               <span style="font-weight: 700; color: var(--primary);">₹${doc.consultation_fee} / consult</span>
@@ -750,11 +750,11 @@
         tbody.innerHTML = json.data.map(c => `
           <tr>
             <td><code style="font-size: 0.75rem;">${c.id.slice(0, 8)}...</code></td>
-            <td>Dr. ${c.doctor_first_name} ${c.doctor_last_name}</td>
-            <td>${c.patient_first_name} ${c.patient_last_name}</td>
+            <td>Dr. ${escapeHtml(c.doctor_first_name)} ${escapeHtml(c.doctor_last_name)}</td>
+            <td>${escapeHtml(c.patient_first_name)} ${escapeHtml(c.patient_last_name)}</td>
             <td>${new Date(c.scheduled_at).toLocaleString()}</td>
             <td><span class="badge ${c.status === 'COMPLETED' ? 'badge-success' : 'badge-warning'}">${c.status}</span></td>
-            <td><a href="${c.video_room_url}" target="_blank" style="color: var(--primary); font-weight: 600;">Join Room</a></td>
+            <td><a href="${escapeHtml(c.video_room_url)}" target="_blank" style="color: var(--primary); font-weight: 600;">Join Room</a></td>
             <td><button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem;" onclick="viewPrescription('${c.id}')">View Rx</button></td>
           </tr>
         `).join('');
@@ -787,9 +787,9 @@
         const meds = typeof rx.medications === 'string' ? JSON.parse(rx.medications) : rx.medications;
         document.getElementById('rxMedicationsList').innerHTML = meds.map(m => `
           <div style="background: #f7fafc; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid var(--primary);">
-            <div style="font-weight: 700; color: var(--primary);">${m.name}</div>
-            <div style="font-size: 0.8rem; color: var(--text-muted);">${m.dosage} • ${m.frequency} (${m.durationDays} days)</div>
-            ${m.instructions ? `<div style="font-size: 0.75rem; color: #4a5568;">Instructions: ${m.instructions}</div>` : ''}
+            <div style="font-weight: 700; color: var(--primary);">${escapeHtml(m.name)}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(m.dosage)} • ${escapeHtml(m.frequency)} (${m.durationDays} days)</div>
+            ${m.instructions ? `<div style="font-size: 0.75rem; color: #4a5568;">Instructions: ${escapeHtml(m.instructions)}</div>` : ''}
           </div>
         `).join('');
 
@@ -830,8 +830,8 @@
           const tbody = document.getElementById('utilizationTableBody');
           tbody.innerHTML = util.data.map(u => `
             <tr>
-              <td><strong>Dr. ${u.first_name} ${u.last_name}</strong></td>
-              <td>${u.qualification}</td>
+              <td><strong>Dr. ${escapeHtml(u.first_name)} ${escapeHtml(u.last_name)}</strong></td>
+              <td>${escapeHtml(u.qualification)}</td>
               <td>★ ${u.rating}</td>
               <td>${u.total_slots_generated}</td>
               <td>${u.booked_slots}</td>
@@ -878,11 +878,11 @@
         tbody.innerHTML = json.data.map(l => `
           <tr>
             <td>${new Date(l.timestamp).toLocaleTimeString()}</td>
-            <td><span class="badge ${l.action.includes('BOOKED') ? 'badge-success' : 'badge-warning'}">${l.action}</span></td>
-            <td>${l.resource_type}</td>
-            <td><code style="font-size: 0.75rem;">${l.resource_id.slice(0, 8)}...</code></td>
-            <td>${l.ip_address}</td>
-            <td><code style="font-size: 0.7rem; color: #4a5568;">${l.hash_signature.slice(0, 16)}...</code></td>
+            <td><span class="badge ${l.action.includes('BOOKED') ? 'badge-success' : 'badge-warning'}">${escapeHtml(l.action)}</span></td>
+            <td>${escapeHtml(l.resource_type)}</td>
+            <td><code style="font-size: 0.75rem;">${escapeHtml(l.resource_id.slice(0, 8))}...</code></td>
+            <td>${escapeHtml(l.ip_address)}</td>
+            <td><code style="font-size: 0.7rem; color: #4a5568;">${escapeHtml(l.hash_signature.slice(0, 16))}...</code></td>
           </tr>
         `).join('');
       } catch (err) {

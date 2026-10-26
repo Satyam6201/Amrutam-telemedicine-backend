@@ -83,15 +83,20 @@ export function idempotency({ required = false } = {}) {
 
       const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
-      await redis.set(
+      const acquiredLock = await redis.set(
         redisKey,
         JSON.stringify({
           status: 'PROCESSING',
           requestHash,
         }),
         'EX',
-        60
+        60,
+        'NX'
       );
+
+      if (!acquiredLock) {
+        return next(new ConflictError('A request with this Idempotency-Key is currently being processed.'));
+      }
 
       await query(
         `INSERT INTO idempotency_records (idempotency_key, request_hash, status, expires_at)

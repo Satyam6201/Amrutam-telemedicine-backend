@@ -41,42 +41,41 @@
 amrutam-telemedicine-backend/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml             # GitHub Actions CI: audit, lint, test, docker build
-├── config/                    # Centralized environment, db, redis & queue configs
+│       └── ci.yml
+├── config/
 │   ├── index.js
 │   ├── database.js
 │   ├── redis.js
 │   └── queue.js
-├── docs/                      # Production specifications & threat model
-│   ├── ARCHITECTURE.md        # In-depth 4-page architecture doc with Mermaid diagrams
-│   └── SECURITY_AND_THREAT_MODEL.md # STRIDE, OWASP, encryption & compliance
-├── infra/                     # Infrastructure as Code
+├── docs/
+│   ├── ARCHITECTURE.md
+│   └── SECURITY_AND_THREAT_MODEL.md
+├── infra/
 │   ├── docker/
-│   │   ├── Dockerfile         # Multi-stage production container
-│   │   └── Dockerfile.worker  # Asynchronous background worker container
-│   ├── docker-compose.yml     # Complete stack: App, Worker, Postgres, Redis, Prometheus, Grafana
-│   ├── k8s/                   # Kubernetes deployment, service, HPA, ingress, configmap
-│   ├── prometheus/            # Prometheus scrape configuration
-│   └── terraform/             # AWS Aurora, ElastiCache, VPC, KMS IaC
+│   │   ├── Dockerfile
+│   │   └── Dockerfile.worker
+│   ├── docker-compose.yml
+│   ├── k8s/
+│   ├── prometheus/
+│   └── terraform/
 ├── openapi/
-│   └── openapi.yaml           # Complete OpenAPI 3.0 API specification
+│   └── openapi.yaml
 ├── src/
-│   ├── app.js                 # Express application setup, middleware chain & routes
-│   ├── server.js              # HTTP server, worker init & graceful shutdown handlers
+│   ├── app.js
+│   ├── server.js
 │   ├── database/
-│   │   ├── schema.sql         # DDL: Partitions, indexes, enums, constraints
-│   │   ├── migrate.js         # Schema migration runner
-│   │   └── seed.js            # Reference seeding (Ayurvedic doctors, slots, users)
-│   ├── middlewares/           # Auth, RBAC, Zod validation, Idempotency, Rate Limiting, Audit
-│   ├── modules/               # Domain modules: Auth, Doctors, Slots, Consultations,
-│   │                          # Prescriptions, Payments, Audit, Analytics
-│   ├── utils/                 # AES-256-GCM PHI crypto, SHA-256 hash chaining, errors, response
-│   └── workers/               # Notification worker, Slot release worker, cron sweep
+│   │   ├── schema.sql
+│   │   ├── migrate.js
+│   │   └── seed.js
+│   ├── middlewares/
+│   ├── modules/
+│   ├── utils/
+│   └── workers/
 ├── tests/
-│   ├── unit/                  # Cryptography, PHI encryption, Zod validation unit tests
-│   ├── integration/           # Complete API lifecycle & idempotency integration tests
-│   └── concurrency/           # 5-way simultaneous race condition test on same slot
-├── .env.example               # Documented environment variables template
+│   ├── unit/
+│   ├── integration/
+│   └── concurrency/
+├── .env.example
 └── README.md
 ```
 
@@ -91,8 +90,8 @@ amrutam-telemedicine-backend/
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/amrutam/telemedicine-backend.git
-cd telemedicine-backend
+git clone https://github.com/Satyam6201/Amrutam-telemedicine-backend.git
+cd Amrutam-telemedicine-backend
 npm install
 ```
 
@@ -110,19 +109,13 @@ docker compose -f infra/docker-compose.yml up -d postgres redis
 
 ### 4. Run Migrations & Seed Reference Data
 ```bash
-# Run PostgreSQL partitioned table migrations
 npm run db:migrate
-
-# Seed Ayurvedic specialties, doctors, availability slots, and admin user
 npm run db:seed
 ```
 
 ### 5. Start the Application
 ```bash
-# Start API in development mode (with hot-reload)
 npm run dev
-
-# Start background worker process in separate terminal
 npm run worker
 ```
 
@@ -139,19 +132,10 @@ The API will now be running at:
 The test suite covers unit logic, cryptographic guarantees, race conditions, idempotency replays, and full API integration:
 
 ```bash
-# Run all tests
 npm test
-
-# Run unit tests (AES-256-GCM, SHA-256 chaining, Zod schemas)
-node --test tests/unit/**/*.test.js
-
-# Run concurrency race condition test (5 concurrent requests on same slot)
-node --test tests/concurrency/**/*.test.js
-
-# Run idempotency integration tests (replays & payload mismatch)
+node --test tests/unit/
+node --test tests/concurrency/
 node --test tests/integration/idempotency.test.js
-
-# Run complete API integration lifecycle test suite
 node --test tests/integration/api.test.js
 ```
 

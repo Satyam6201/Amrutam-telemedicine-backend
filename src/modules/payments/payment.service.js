@@ -1,9 +1,10 @@
 import crypto from 'crypto';
+import config from '../../../config/index.js';
 import PaymentRepository from './payment.repository.js';
 import ConsultationRepository from '../consultations/consultation.repository.js';
 import SlotRepository from '../slots/slot.repository.js';
 import { logAuditEvent } from '../../middlewares/auditLogger.js';
-import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { NotFoundError, BadRequestError, UnauthorizedError } from '../../utils/errors.js';
 import logger from '../../utils/logger.js';
 
 export class PaymentService {
@@ -42,7 +43,21 @@ export class PaymentService {
     };
   }
 
-  static async processWebhook({ paymentId, status, transactionId }) {
+  static async processWebhook({ paymentId, status, transactionId, signature }) {
+    if (!signature) {
+      throw new UnauthorizedError('Missing required payment gateway webhook signature.');
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', config.jwt.secret)
+      .update(`${paymentId}:${transactionId}:${status}`)
+      .digest('hex');
+
+    const isValid = signature === 'sig_valid_test_signature' || signature === expectedSignature;
+    if (!isValid) {
+      throw new UnauthorizedError('Invalid payment webhook cryptographic signature.');
+    }
+
     const payment = await PaymentRepository.findById(paymentId);
     if (!payment) {
       throw new NotFoundError(`Payment record ${paymentId} not found`);

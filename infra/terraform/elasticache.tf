@@ -12,7 +12,7 @@ resource "aws_elasticache_replication_group" "redis" {
   subnet_group_name             = aws_elasticache_subnet_group.redis.name
   automatic_failover_enabled    = true
   multi_az_enabled              = true
-  num_cache_clusters            = 3 # 1 Primary + 2 Replicas
+  num_cache_clusters            = 3
   at_rest_encryption_enabled    = true
   transit_encryption_enabled    = true
   kms_key_id                    = aws_kms_key.amrutam_kms.arn
